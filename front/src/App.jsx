@@ -1,7 +1,8 @@
 import { useState } from "react";
-import "./index.css";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import Board from "./Board.jsx";
 
-export default function App() {
+function Home() {
   const [users, setUsers] = useState([]);
   const [form, setForm] = useState({
     name: "",
@@ -79,6 +80,19 @@ export default function App() {
           </div>
         ))}
       </div>
+
+      <a href="/board">Открыть доску</a>
     </div>
+  );
+}
+
+export default function App() {
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/board" element={<Board />} />
+      </Routes>
+    </BrowserRouter>
   );
 }
