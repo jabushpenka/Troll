@@ -1,25 +1,45 @@
-from dbpword import DBPWORD
 import psycopg2
+import json 
+from fastapi import FastAPI, HTTPException, Depends
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from pydantic import BaseModel
+from passlib.context import CryptContext
+from jose import jwt
+import os
+import bcrypt
 
 # noinspection SpellCheckingInspection
 conn = psycopg2.connect(
-    dbname="trelldb",
-    user="trell",
-    password=DBPWORD,
-    host="localhost"
+    dbname=os.getenv("DB_NAME"),
+    user=os.getenv("DB_USER"),
+    password=os.getenv("DB_PASSWORD"),
+    host=os.getenv("DB_HOST")
 )
 
 cur = conn.cursor()
 
-from fastapi import FastAPI
-from pydantic import BaseModel
-
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[#потом поменять на домен
+        "http://localhost:5173",
+        "http://127.18.0.1:5173",
+        "http://130.49.148.168:5173",
+        ],  
+    allow_credentials=True,
+    allow_methods=["*"],  # POST, GET, PUT и т.д.
+    allow_headers=["*"],
+)
+
+SECRET_KEY = str(os.getenv("SECRET_KEY"))
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 # Pydantic-модель для валидации входящих данных
 class User(BaseModel):
     user_name: str
-    pword: str
+    password: str
     email: str
     photo: str | None = "default.png"
 
@@ -27,10 +47,95 @@ class Board(BaseModel):
     board_name: str
     address: str
     about: str | None
+    contents: dict | None
 
 class Link(BaseModel):
     user_id: int
     board_id: int
+
+
+#модели объектов с доски, пожалуйста спид мне это нужно
+class Task(BaseModel):
+    id: str
+    text: str
+    done: bool
+
+class Card(BaseModel):
+    id: str
+    title: str
+    tasks: list[Task]
+
+class Column(BaseModel):
+    id: str
+    title: str
+    cards: list[Card]
+
+class BoardContents(BaseModel):
+    columns: list[Column]
+
+#модель для логина
+class Login(BaseModel):
+    login: str
+    password: str
+
+
+#хеширование и проверка пароля
+def hash_password(password: str):
+    return pwd_context.hash(password)
+
+def verify_password(password: str, hashed: str):
+    return pwd_context.verify(password, hashed)
+
+
+# 1. CREATE: Регистрация нового пользователя
+@app.post("/register")
+def register_user(user:User):
+    cur = conn.cursor()
+    new_user = user.model_dump()  # Превращаем Pydantic-модель в словарь
+    user_name = new_user["user_name"]
+    password = new_user["password"]
+    email = new_user["email"]
+    photo = new_user["photo"]
+    
+    hashed = hash_password(password)
+
+    try:
+        cur.execute("INSERT INTO users (name,password,email,photo)"
+            "VALUES (%s, %s, %s, %s) RETURNING user_id;",
+            (user_name, hashed, email, photo))
+        result = cur.fetchone()
+        conn.commit()
+    except Exception as e:
+        conn.rollback()
+        print(e)
+        raise HTTPException(status_code=400, detail="User already exists")
+
+    return result
+
+# 2. READ: Проверка данных пользователя (логин)
+@app.post("/login")
+def login(data: User):
+    cur = conn.cursor()
+    login = data.user_name
+    password = data.password
+
+    cur.execute(
+        "SELECT password FROM users WHERE name = %s",
+        (login,)
+    )
+    result = cur.fetchone()
+
+    if not result:
+        raise HTTPException(status_code=401, detail="Invalid credentials")
+
+    stored_hash = result[0]
+
+    if not verify_password(password, stored_hash):
+        raise HTTPException(status_code=401, detail="Invalid credentials")
+
+    token = jwt.encode({"sub": login}, SECRET_KEY, algorithm="HS256") #sha256 с ключом
+
+    return {"access_token": token}
 
 # 1. READ: Получить всех пользователей
 @app.get("/users")
@@ -138,13 +243,43 @@ def check_access(board_id : int, user_id : int):
     result = cur.fetchone()
     return bool(result)
 
-# 3. UPDATE: изменение на доске
+# 1. READ: Получить все доски пользователя
+@app.get("/userboards/{user_name}")
+def get_user_boards(user_name : str):
+    cur.execute("SELECT user_id FROM users WHERE name = %s;",(user_name,))
+    user_id = cur.fetchone()[0]
+    cur.execute("SELECT board_id FROM link WHERE user_id = %s;", (user_id,))
+    result = cur.fetchall()
+    return result
 
+
+security = HTTPBearer()
+# 2. READ: Вернуть пользователя из токена
+@app.get("/token")
+def get_user_by_token(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    token = credentials.credentials
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
+        user = payload.get("sub")
+        return user
+    except jwt.PyJWTError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+# 2. READ: Получить содержимое доски
+@app.get("/boards/{board_id}")
+def get_board_data(board_id : int):
+    cur.execute("SELECT contents FROM boards WHERE board_id = %s;", (board_id,))
+    result = cur.fetchone()[0]
+    return result
+
+# 3. UPDATE: изменение на доске
 @app.put("/boards/{board_id}")
-def update_board(board_id: int, contents: str):
+def update_board(board_id: int, board_contents: BoardContents):
+    contents_json = json.dumps(board_contents.model_dump())
     # Ищем задачу по ID
+    
     cur.execute("UPDATE boards SET contents = %s WHERE board_id = %s RETURNING address,contents;",
-                (contents,str(board_id)))
+                (contents_json,str(board_id)))
     result = cur.fetchone()
     conn.commit()
     return result

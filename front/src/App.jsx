@@ -1,7 +1,10 @@
 import { useState } from "react";
-import "./index.css";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import Board from "./Board.jsx";
+import Register from "./Register.jsx"
+import Boardslist from "./Boardslist.jsx"
 
-export default function App() {
+function Home() {
   const [users, setUsers] = useState([]);
   const [form, setForm] = useState({
     name: "",
@@ -79,6 +82,25 @@ export default function App() {
           </div>
         ))}
       </div>
+
+      <a href="/board">Открыть доску</a>
+        <br/>
+      <a href="/register">Регистрация</a>
+      <br/>
+      <a href="/temp">темп</a>
     </div>
+  );
+}
+
+export default function App() {
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/board" element={<Board />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/temp" element={<Boardslist />} />
+      </Routes>
+    </BrowserRouter>
   );
 }
