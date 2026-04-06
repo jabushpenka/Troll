@@ -1,12 +1,15 @@
+import styles from "./Board.module.css";
 import { useState, useEffect } from "react";
 import {nanoid} from "nanoid";
-import './Board.css';
+import Templates from "./Templates.jsx";
+
 import trashbold from './assets/trash-bold.svg';
 import trashregular from './assets/trash-regular.svg';
 import plus from './assets/plus.svg';
 import add from './assets/add.svg';
 import taskbuttondone from './assets/task-button-done.svg';
 import taskbutton from './assets/task-button.svg';
+import changeapply from './assets/change-apply.svg';
 
 export default function Board() {
   const [boardData,setBoardData] = useState({columns: []});
@@ -14,7 +17,7 @@ export default function Board() {
   useEffect(() => {
     fetch("http://130.49.148.168:8448/boards/228")
       .then(res => res.json())
-      .then(data => setBoardData(data));
+      .then(data => {setBoardData(data[0])}); // данные приходят почему то как список а не объект
   }, []);
 
   const [newColumnName, setNewColumnName] = useState("");
@@ -219,7 +222,7 @@ export default function Board() {
     return (
       (updateActiveColumn.colId == col.id) 
         ? (
-          <div>
+          <div className={styles.updateColumnName}>
             <input
               autoFocus
               value={updateActiveColumn.title}
@@ -234,13 +237,13 @@ export default function Board() {
                 }
               }}
             />
-            <button className="updateColumnName" onMouseDown={
+            <button onMouseDown={
               (e) => {
                 e.preventDefault(); 
                 updateColumnTitle(col.id,updateActiveColumn.title);
               }}>
-            Изменить</button>
-          </div>
+              <img src={changeapply}/></button>
+            </div>
           )
         : <h2 onClick={() => {setUpdateActiveColumn({colId: col.id, title: col.title})}}>{col.title}</h2>
       )
@@ -250,7 +253,7 @@ export default function Board() {
     return (
       (updateActiveCard.colId == col.id) && (updateActiveCard.cardId == card.id) 
         ? (
-          <div>
+          <div className={styles.updateCardName}>
             <input
               autoFocus
               value={updateActiveCard.title}
@@ -258,19 +261,19 @@ export default function Board() {
               onKeyDown={(e) => updateCardKeyPress(e)} 
               onBlur={() => {
                 if (updateActiveCard.title.trim()){
-                  updateCardTitle(colId, card.id, updateActiveCard.title)
+                  updateCardTitle(col.Id, card.id, updateActiveCard.title)
                 }
                 else{
                   setUpdateActiveCard({colId: null, cardId: null, title: ""})
                 }
               }}
             />
-            <button className="updateCardName" onMouseDown={
+            <button className={styles.updateCardName} onMouseDown={
               (e) => {
                 e.preventDefault(); 
                 updateCardTitle(col.id,card.id,updateActiveCard.title);
               }}>
-            Изменить</button>
+            <img src={changeapply}/></button>
           </div>
         )
         : <h2 onClick={() => {setUpdateActiveCard({colId: col.id, cardId: card.id, title: card.title})}}>{card.title}</h2>
@@ -281,7 +284,7 @@ export default function Board() {
     return (
       (activeCard.colId === col.id)
         ? (
-            <div className="addCardContainer">
+            <div className={styles.addCardContainer}>
               <input
                 autoFocus
                 value={activeCard.title}
@@ -297,7 +300,7 @@ export default function Board() {
                   }
                 }}
               />
-              <button className="addcard" onMouseDown={(e) => {e.preventDefault(); addCard(col.id)}}>Добавить</button>
+              <button className={styles.addcard} onMouseDown={(e) => {e.preventDefault(); addCard(col.id)}}>Добавить</button>
             </div>
           ) 
           : (
@@ -312,7 +315,7 @@ export default function Board() {
     
   const taskList = (col, card) => {
     return (
-      <ul className="tasklist">
+      <ul className={styles.tasklist}>
         {card.tasks.map(task => (
           <li key={task.id}>
             <button 
@@ -320,7 +323,7 @@ export default function Board() {
                 <img src={task.done ? taskbuttondone : taskbutton}/>
             </button>
             <span 
-              className={task.done ? "done" : ""}
+              className={task.done ? styles.done : ""}
               onClick={() => toggleTask(col.id, card.id, task.id)}>
                 {task.text}
             </span>
@@ -347,9 +350,9 @@ export default function Board() {
               setActiveTask({colId: null, cardId: null, title: ""})
             }
           }}
-          placeholder="Task"
+          placeholder="Задание"
         />
-        <button className="addtask" onMouseDown={(e) => {e.preventDefault(); addTask(colId, cardId)}}>Добавить</button>
+        <button className={styles.addtask} onMouseDown={(e) => {e.preventDefault(); addTask(colId, cardId)}}>Добавить</button>
       </div>
     ) : (
       <button onClick={() => setActiveTask({ colId: colId, cardId: cardId, title: ""})}>
@@ -358,17 +361,23 @@ export default function Board() {
     ))
   }
 
+
+  console.log("boardData:", boardData);
+  console.log("columns:", boardData.columns);
+  console.log("isArray:", Array.isArray(boardData.columns));
+
   return (
-    <div className="board">
-      <div className="board-header">
+    
+    <div className={styles.board}>
+      {/* <div className={styles.boardheader}>
         <input
           placeholder="Новая колонка"
           value={newColumnName}
           onChange={(e) => setNewColumnName(e.target.value)}
           onKeyDown={(e) => addColumnKeyPress(e)}
         />
-        <button className="addcolumn" onClick={() => addColumn()}>Добавить колонку</button>
-        <button className="addcolumn" onClick={async () => {
+        <button className={styles.addcolumn} onClick={() => addColumn()}>Добавить колонку</button>
+        <button className={styles.addcolumn} onClick={async () => {
           await fetch("http://130.49.148.168:8448/boards/228",{
             method: "PUT",
             headers: {
@@ -376,18 +385,22 @@ export default function Board() {
             },
             body: JSON.stringify(boardData),
           })}}>Сохранить</button>
+      </div> */
+      }
+      <div className={styles.boardname}>
+        <h1>Название доски</h1>{/*хардкод, убрать */}
       </div>
 
-      <div className="columns">
+      <div className={styles.columns}>
         {boardData.columns.map(col => (
-          <div key={col.id} className="column">
-            <div className="columnheader">
+          <div key={col.id} className={styles.column}>
+            <div className={styles.columnheader}>
               {columnTitle(col)}
               <button onClick={() => removeColumn(col.id)}><img src={trashbold}/></button>
             </div>
             {col.cards.map(card => (
-              <div key={card.id} className="card">
-                <div className="cardheader">
+              <div key={card.id} className={styles.card}>
+                <div className={styles.cardheader}>
                   {cardTitle(col,card)}
                   <button onClick={() => removeCard(col.id,card.id)}><img src={trashregular}/></button>
                 </div>
@@ -399,6 +412,13 @@ export default function Board() {
           </div>
         ))}
       </div>
+      
+      <button 
+        className={styles.addcolumn}
+        onClick={() => {setNewColumnName("Новая колонка");addColumn()}}>
+          добавить колонку</button>
+
+      <Templates />
     </div>
   );
 }

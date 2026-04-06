@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import {nanoid} from 'nanoid';
+import style from './Register.module.css'
+
 export default function Register() {
-  const [isLogin, setIsLogin] = useState(true);
+  const [isLogin, setIsLogin] = useState(false);
   const [login, setLogin] = useState('');
   const [password, setPassword] = useState('');
   const [message, setMessage] = useState('');
@@ -20,7 +22,7 @@ export default function Register() {
       method: 'POST',
       credentials: "include",
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ user_name: login, password: password, email})
+      body: JSON.stringify(isLogin ? {login: login, pword:password} : { user_name: login, pword: password, email})
     });
 
     const data = await res.json();
@@ -39,36 +41,85 @@ export default function Register() {
     }
   };
 
+  const registerForm = () => {
+    return (
+      <>
+      <div>
+        <span>Регистрация</span>
+        <div className={style.formcontainer}>
+           <form className={style.form} onSubmit={handleSubmit}>
+            <h3>Введите почту</h3>
+            <input
+              value={login}
+              onChange={(e) => setLogin(e.target.value)}
+              placeholder=""
+              required
+            />
+            
+            <h3>Придумайте пароль</h3>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder=""
+              required
+            />
+            
+            {/*Потом повторение пароля и допилиьт нормально блин*/}
+            <button type="submit">
+              Регистрация
+            </button>
+          </form>
+
+        </div>
+          <h3>Уже есть аккаунт? <span onClick={() => setIsLogin(prev => !prev)}>Авторизоваться</span></h3>
+      </div>
+      </>
+      )
+  }
+
+  const loginForm = () => {
+    return (
+      <>
+      <div>
+        <span>Авторизация</span>
+        <div className={style.formcontainer}>
+           <form className={style.form} onSubmit={handleSubmit}>
+            <h3>Введите почту</h3>
+            <input
+              value={login}
+              onChange={(e) => setLogin(e.target.value)}
+              placeholder=""
+              required
+            />
+            
+            <h3>Введите пароль</h3>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder=""
+              required
+            />
+            
+            {/*Потом повторение пароля и допилиьт нормально блин*/}
+            <button type="submit">
+              Вход
+            </button>
+          </form>
+
+        </div>
+          <h3>Нет аккаунта? <span onClick={() => setIsLogin(prev => !prev)}>Зарегистрироваться</span></h3>
+      </div>
+      </>
+      )
+  }
+  
   return (
-    <div style={{ maxWidth: 300, margin: '50px auto' }}>
-      <h2>{isLogin ? 'Login' : 'Register'}</h2>
+    <div className={style.container}>
+      <h2>Добро пожаловать!</h2>
 
-      <form onSubmit={handleSubmit}>
-        <input
-          value={login}
-          onChange={(e) => setLogin(e.target.value)}
-          placeholder="Login"
-          required
-        />
-        <br />
-
-        <input
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          placeholder="Password"
-          required
-        />
-        <br />
-
-        <button type="submit">
-          {isLogin ? 'Login' : 'Register'}
-        </button>
-      </form>
-
-      <p onClick={() => setIsLogin(!isLogin)} style={{ cursor: 'pointer' }}>
-        {isLogin ? 'Нет аккаунта?' : 'Есть аккаунт?'}
-      </p>
+        {isLogin ? loginForm() : registerForm()}
 
       <p>{message}</p>
     </div>

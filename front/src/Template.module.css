@@ -1,0 +1,72 @@
+@font-face {
+    font-family: 'AnonymousPro';
+    src: url('fonts/AnonymousPro-Regular.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+} 
+
+@font-face {
+    font-family: 'AnonymousPro-Bold';
+    src: url('fonts/AnonymousPro-Bold.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+} 
+
+button,h2,h3,span,input, ul, li, .card{
+  font-family: 'AnonymousPro';
+}
+
+.presets {
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    height: 92vh; /*8vh - header*/
+    width: 20vw;
+    top: 8vh;
+    right: 0;
+    background-color: #EAD7C3;
+}
+
+.presets > h2 {
+    align-self: center;
+    margin-top: 1em;
+    font-size: 36px;
+}
+
+.card {
+  display: flex;
+
+  flex-direction: column;
+  background-color: #FBF6EF;
+  padding: 16px;
+  border-radius: 10px;
+  margin: 8px;
+}
+
+.cardheader > h2 {
+  margin: 8px 0;
+  font-size: 20px;
+  font-weight: 400;
+  min-width: 0;
+  flex: 1 1 auto;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+.tasklist {
+  margin: 0;
+  padding: 0;
+  list-style-type: none;
+}
+
+.tasklist > li {
+  display: flex;
+}
+
+.tasklist button {
+  background: none;
+  border: 0;
+  margin: 0;
+  margin-right: 8px;
+  padding: 0;
+}

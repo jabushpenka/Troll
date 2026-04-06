@@ -1,0 +1,20 @@
+import styles from "./Header.module.css";
+
+export default function Layout({ children }) {
+  return (
+    <div className="layout">
+
+      <div className={styles.header}>
+        <span>TROLL</span>
+        <div className={styles.profile}>
+          <span>Профиль</span>
+        </div>
+      </div>
+
+      <div className="content">
+        {children}
+      </div>
+
+    </div>
+  );
+}

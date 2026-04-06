@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Board from "./Board.jsx";
 import Register from "./Register.jsx";
 import Boardslist from "./Boardslist.jsx";
+import Layout from "./Layout.jsx";
 
 function Home() {
   const [users, setUsers] = useState([]);
@@ -95,12 +96,14 @@ function Home() {
 export default function App() {
   return (
     <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/board" element={<Board />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="/temp" element={<Boardslist />} />
-      </Routes>
+      <Layout>
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/board" element={<Board />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/temp" element={<Boardslist />} />
+        </Routes>
+      </Layout>
     </BrowserRouter>
   );
 }
