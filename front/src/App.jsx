@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Board from "./Board.jsx";
-import Register from "./Register.jsx";
-import Boardslist from "./Boardslist.jsx";
-import Layout from "./Layout.jsx";
+import {createBrowserRouter, RouterProvider, redirect} from "react-router-dom";
+import Board from "./modules/Board.jsx";
+import Register from "./modules/Register.jsx";
+import Boardslist from "./modules/Boardslist.jsx";
+import Layout from "./modules/Layout.jsx";
 
 function Home() {
   const [users, setUsers] = useState([]);
@@ -93,17 +94,47 @@ function Home() {
   );
 }
 
+const router = createBrowserRouter([
+  {
+    path: "/",
+    element: <Layout />, // теперь layout — это родительский route
+    children: [
+      {
+        index: true,
+        element: <Home />,
+      },
+      {
+        path: "board/:address",
+        loader: async ({ params }) => {
+          const token = localStorage.getItem("token");
+
+          const res = await fetch(`http://130.49.148.168:8448/boards/${params.address}`, {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          });
+
+          if (!res.ok) {
+            throw redirect("/");
+          }
+          console.log(params.address);
+
+          return null;
+        },
+        element: <Board />,
+      },
+      {
+        path: "register",
+        element: <Register />,
+      },
+      {
+        path: "temp",
+        element: <Boardslist />,
+      },
+    ],
+  },
+]);
+
 export default function App() {
-  return (
-    <BrowserRouter>
-      <Layout>
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/board" element={<Board />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/temp" element={<Boardslist />} />
-        </Routes>
-      </Layout>
-    </BrowserRouter>
-  );
+  return <RouterProvider router={router} />;
 }

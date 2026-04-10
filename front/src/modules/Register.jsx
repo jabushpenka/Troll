@@ -1,15 +1,17 @@
 import { useState } from 'react';
 import {nanoid} from 'nanoid';
-import style from './Register.module.css'
+import style from './styles/Register.module.css'
+import { createBoard } from './api.jsx';
+import { useNavigation } from './hooks/Navigation.jsx';
+
 
 export default function Register() {
   const [isLogin, setIsLogin] = useState(false);
   const [login, setLogin] = useState('');
   const [password, setPassword] = useState('');
   const [message, setMessage] = useState('');
-
   const email = nanoid(8) + "@" + nanoid(3);
-
+  const {openBoard} =  useNavigation();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -22,22 +24,27 @@ export default function Register() {
       method: 'POST',
       credentials: "include",
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(isLogin ? {login: login, pword:password} : { user_name: login, pword: password, email})
+      body: JSON.stringify(isLogin ? {login: login, pword: password} : { user_name: login, pword: password, email})
     });
 
     const data = await res.json();
 
     if (!res.ok) {
-      setMessage(data.detail || 'Ошибка');
+      setMessage(data.detail || 'Ошибка data');
       return;
     }
 
+    const token = data.access_token
+
+    localStorage.setItem('token', token);
+
     if (isLogin) {
-      localStorage.setItem('token', data.access_token);
       setMessage('ВХОД ВЫПОЛНЕН');
-    } else {
+    } else {     
       setMessage('РЕГИСТРАЦИЯ ВЫПОЛНЕНА');
-      setIsLogin(true);
+      const boardData = await createBoard(nanoid(10), login);
+      const boardAddress = boardData.address;
+      openBoard(boardAddress, login);
     }
   };
 

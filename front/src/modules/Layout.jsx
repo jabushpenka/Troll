@@ -1,4 +1,5 @@
-import styles from "./Header.module.css";
+import { Outlet } from "react-router-dom";
+import styles from "./styles/Header.module.css";
 
 export default function Layout({ children }) {
   return (
@@ -12,7 +13,7 @@ export default function Layout({ children }) {
       </div>
 
       <div className="content">
-        {children}
+        <Outlet />
       </div>
 
     </div>

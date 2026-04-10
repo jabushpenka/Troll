@@ -1,5 +1,6 @@
-import styles from "./Board.module.css";
+import styles from "./styles/Board.module.css";
 import { useState, useEffect } from "react";
+import { useParams } from "react-router-dom"; //для использования данных, полученных при переходе через navigate
 import {nanoid} from "nanoid";
 import Templates from "./Templates.jsx";
 
@@ -14,11 +15,13 @@ import changeapply from './assets/change-apply.svg';
 export default function Board() {
   const [boardData,setBoardData] = useState({columns: []});
 
+  const { address } = useParams();
+
   useEffect(() => {
-    fetch("http://130.49.148.168:8448/boards/228")
+    fetch(`http://130.49.148.168:8448/board/${address}`)
       .then(res => res.json())
-      .then(data => {setBoardData(data[0])}); // данные приходят почему то как список а не объект
-  }, []);
+      .then(data => {setBoardData(data)}); 
+  }, [address]);
 
   const [newColumnName, setNewColumnName] = useState("");
   const [updateActiveColumn, setUpdateActiveColumn] = useState({colId: null, title: ""});
@@ -360,11 +363,6 @@ export default function Board() {
       </button>
     ))
   }
-
-
-  console.log("boardData:", boardData);
-  console.log("columns:", boardData.columns);
-  console.log("isArray:", Array.isArray(boardData.columns));
 
   return (
     
