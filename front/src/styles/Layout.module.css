@@ -1,0 +1,51 @@
+@font-face {
+    font-family: 'AnonymousPro';
+    src: url('../fonts/AnonymousPro-Regular.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+} 
+
+h1,h2,h3,h4,h5,span,input {
+    font-family: 'AnonymousPro';
+}
+
+.header{
+    display: flex;
+    flex-direction: row;
+    position: fixed;
+    top:0;
+    left:0;
+    height: 8vh;
+    width: 100vw;
+    background-color: #EAD7C3;
+    justify-content: space-between;
+    box-shadow: 0px 8px 4px -4px #64646459;
+    z-index: 999;
+}
+
+.header > span {
+    align-self: center;
+    margin-left: 4%;
+    font-size: 20px;
+}
+
+.profile { 
+    display: flex;
+    align-self: center;
+    margin-right: 4%;
+}
+
+.profile > span {
+    font-size: 20px;
+    margin:8px;
+}
+
+.layout{
+    display: flex;
+}
+
+.content {
+    display: flex;
+    margin-top:8vh;
+    width: 100%;
+}

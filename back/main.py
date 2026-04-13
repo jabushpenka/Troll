@@ -50,20 +50,6 @@ class User(BaseModel):
     email: str
     photo: str | None = "default.png"
 
-
-class Board(BaseModel):
-    board_name: str
-    address: str
-    about: str | None
-    contents: dict | None
-
-
-class Link(BaseModel):
-    user_name: str
-    address: str
-    role_name: str = "Worker"
-
-# модели объектов с доски, пожалуйста спид мне это нужно
 class Task(BaseModel):
     id: str
     text: str
@@ -85,12 +71,30 @@ class Column(BaseModel):
 class BoardContents(BaseModel):
     columns: list[Column]
 
+class Board(BaseModel):
+    board_name: str
+    address: str
+    about: str | None
+    contents: BoardContents | None
+
+
+class Link(BaseModel):
+    user_name: str
+    address: str
+    role_name: str = "Worker"
+
+# модели объектов с доски, пожалуйста спид мне это нужно
+
 
 # модель для логина
 class Login(BaseModel):
     login: str
     pword: str
 
+
+class BoardCreate(BaseModel):
+    board: Board
+    owner_name: str
 
 # хеширование пароля
 def hash_password(password: str):
@@ -105,6 +109,16 @@ def cancel(error: Exception):
     conn.rollback()
     print(error)
     raise HTTPException(status_code=400, detail=str(error))
+
+security = HTTPBearer()
+def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    token = credentials.credentials
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
+        username = payload.get("sub")
+        return username
+    except jwt.PyJWTError:
+        raise HTTPException(status_code=401, detail="Invalid token")
 
 # Регистрация нового пользователя
 @app.post("/register")
@@ -123,9 +137,13 @@ def register_user(user: User):
                     (user_name, hashed, email, photo))
         result = cur.fetchone()
         conn.commit()
-        return result
+        
     except Exception as e:
         cancel(e)
+
+    token = jwt.encode({"sub": user_name}, SECRET_KEY, algorithm="HS256")  # sha256 с ключом
+
+    return {"user": result, "access_token": token}
 
 # Проверка данных пользователя (логин)
 @app.post("/login")
@@ -184,7 +202,10 @@ def get_boards(skip: int = 0, limit: int = 10):
 
 # Создать новую доску
 @app.post("/boards")
-def create_board(board: Board, owner_name: str):
+def create_board(data: BoardCreate):
+    board = data.board
+    owner_name = data.owner_name
+
     cur.execute("SELECT user_id FROM users WHERE user_name = %s",(owner_name,))
     res = cur.fetchone()
     if not bool(res):
@@ -195,6 +216,8 @@ def create_board(board: Board, owner_name: str):
     board_name = new_board["board_name"]
     address = new_board["address"]
     about = new_board["about"]
+    contents = new_board["contents"]
+    contents_json = json.dumps(contents)
 
     cur.execute("SELECT board_id FROM boards WHERE address = %s", (address,))
     res = cur.fetchone()
@@ -203,9 +226,9 @@ def create_board(board: Board, owner_name: str):
 
     # Сохраняем в базу
     try:
-        cur.execute("INSERT INTO boards (board_name,address,about) VALUES"
-                    "(%s,%s,%s) RETURNING board_id;",
-                    (board_name, address, about))
+        cur.execute("INSERT INTO boards (board_name,address,about,contents) VALUES"
+                    "(%s,%s,%s,%s) RETURNING board_id;",
+                    (board_name, address, about, contents_json))
         board_id = cur.fetchone()[0]
         conn.commit()
     except Exception as e:
@@ -220,8 +243,7 @@ def create_board(board: Board, owner_name: str):
         conn.commit()
     except Exception as e:
         cancel(e)
-
-    result = {"board_id": board_id, "owner_id": owner_id}
+    result = {"board_id": board_id, "owner_id": owner_id, "address": address}
     return result
 
 
@@ -308,8 +330,8 @@ def give_role(link: Link):
 
 
 # Проверить роль пользователя на доске
-@app.get("/boards/{address}/{user_name}")
-def check_access(address: str, user_name: str):
+@app.get("/boards/{address}")
+def check_access(address: str, user_name: str = Depends(get_current_user)):
     cur.execute("SELECT board_id FROM boards WHERE address = %s",
                 (address,))
     res = cur.fetchone()
@@ -328,14 +350,14 @@ def check_access(address: str, user_name: str):
                 (board_id, user_id))
     res = cur.fetchone()
     if not bool(res):
-        return {"User has no access"}
+        raise HTTPException(status_code=403, detail="User has no access")
     role_id = res[0]
 
     cur.execute("SELECT role_name FROM roles WHERE role_id = %s;",
                 (role_id,))
     res = cur.fetchone()
     if not bool(res):
-        return {"Role does not exist/unknown role"}
+        raise HTTPException(status_code=403, detail="Unknown role - no access")
     role_name = res[0]
 
     result = {"Access level": role_name}
@@ -354,36 +376,26 @@ def get_user_boards(user_name: str):
         cur.execute("SELECT * FROM boards WHERE board_id IN"
                     "(SELECT board_id FROM links WHERE user_id=%s);",
                     (user_id,))
-        result = cur.fetchall()
+        #преобразую из list(tuple) в list(dict) 
+        rows = cur.fetchall()
+        columns = [desc[0] for desc in cur.description]
+
+        result = [dict(zip(columns, row)) for row in rows]
+        ###
         return result
     except Exception as e:
         cancel(e)
 
-security = HTTPBearer()
-
-
-# Вернуть пользователя из токена
-@app.get("/token")
-def get_user_by_token(credentials: HTTPAuthorizationCredentials = Depends(security)):
-    token = credentials.credentials
-    try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
-        user = payload.get("sub")
-        return user
-    except jwt.PyJWTError:
-        raise HTTPException(status_code=401, detail="Invalid token")
-
-
 # Получить содержимое доски по адресу
-@app.get("/boards/{address}")
+@app.get("/board/{address}")
 def get_board_data(address: str):
     cur.execute("SELECT contents FROM boards WHERE address = %s;",
                 (address,))
     result = cur.fetchone()
     if not bool(result):
-        return {"Board does not exist"}
+        return {"error" : "Board does not exist"}
 
-    return result
+    return result[0] #возвращает объект, а не список
 
 # изменение на доске по адресу
 @app.put("/boards/{address}")
@@ -411,3 +423,8 @@ def get_roles(skip: int = 0, limit: int = 10):
     cur.execute("SELECT * FROM roles OFFSET %s LIMIT %s;",(skip,limit))
     result = cur.fetchall()
     return result
+
+# Получить имя пользователя / авторизация
+@app.get("/me")
+def get_me(user_name: str = Depends(get_current_user)):
+    return {"user_name": user_name}

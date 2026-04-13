@@ -1,0 +1,374 @@
+@font-face {
+    font-family: 'AnonymousPro';
+    src: url('../fonts/AnonymousPro-Regular.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+} 
+
+@font-face {
+    font-family: 'AnonymousPro-Bold';
+    src: url('..fonts/AnonymousPro-Bold.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+} 
+
+body{
+  margin: 0;
+  height: 92vh;
+  background-color: #FBF6EF;
+}
+
+button,h2,h3,span,input, ul, li{
+  font-family: 'AnonymousPro';
+}
+
+.board {
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+  margin-right: 23vw;
+  margin-left: 5%;
+}
+
+.boardname {
+  display: flex;
+  flex-wrap: nowrap;
+  flex-direction: row;
+}
+
+.boardname > h1 {
+  font-size: 48px;
+  margin-right: 12px;
+}
+
+.boardheader {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+  align-content: center;
+}
+
+.boardheader > input {
+  font-size: 24px;
+  background-color: #FBF6EF;
+  border: 1px solid #000000;
+  border-radius: 4px;
+  max-width: 200px;
+}
+
+.addcolumn{
+  padding: 5px 15px 5px 15px;
+  background-color: #FBF6EF;
+  border: 1px solid #000000;
+  border-radius: 4px;
+  align-self: center;
+}
+
+.columns {
+  display: flex;
+  gap: 20px;
+  overflow-x: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #bbbbbb transparent;
+}
+
+.columns::after {
+  content: "";
+  display: inline-block;
+  flex: 0 0 20vw;
+  height: 1px;
+}
+
+
+.column {
+  display: flex;
+  flex-direction: column;
+  background-color: #DCE0D9;
+  padding: 16px;
+  border-radius: 20px;
+  min-width:250px;
+  flex-shrink: 0;
+  height: min-content;
+
+  max-width: 300px;
+}
+
+.columns::-webkit-scrollbar {
+  height: 20px;
+}
+
+.columns::-webkit-scrollbar-thumb {
+  background: #bbb;
+  border-radius: 4px;
+}
+
+.columnheader {
+  display: flex;
+  flex-wrap: nowrap;
+  justify-content: space-between;
+
+  min-width: 0;           
+  width: 100%;            
+  max-width: 300px;      
+}
+
+.columnheader > h2 {
+  margin: 10px;
+  margin-right: 0;
+  font-family: 'AnonymousPro-Bold';
+
+  min-width: 0;           
+  width: 100%;            
+  overflow-wrap: break-word;  
+  word-break: break-word;
+}
+
+.updateColumnName {
+  display: flex;
+  width: 100%;
+  height: 100%;
+}
+
+.updateColumnName > input{
+  background: none;
+  border: none;
+  font-size: 36px;
+  margin: 10px;
+  height: min-content;
+  font-family: 'AnonymousPro-Bold';
+  font-weight: 700;
+  max-width: 80%;
+}
+
+.updateColumnName > input:focus{
+  outline: 1px solid #000000;
+  border: none;
+}
+
+.updateColumnName img, .updateColumnName button {
+  width: 24px;
+  height: 24px;
+  object-fit: contain; 
+  align-self: center;
+  background: none;
+  border: none;
+  margin: 0;
+  padding: 0;
+}
+
+.updateCardName {
+  display: flex;
+  width: 90%;
+  height: 100%;
+}
+
+.updateCardName > input{
+  background: none;
+  border: none;
+  font-size: 20px;
+  margin: 0;
+  height: min-content;
+  max-width: 70%;
+}
+
+.updateCardName > input:focus{
+  outline: 1px solid #000000;
+}
+
+.updateCardName img, .updateCardName button {
+  width: 24px;
+  height: 24px;
+  object-fit: contain; 
+  align-self: center;
+  background: none;
+  border: none;
+  margin-left: 4px;
+  padding: 0;
+}
+
+.columnheader > button {
+  margin: 5px;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 0;
+  background: none;
+}
+
+.columnheader > button > img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain; /* или cover */
+}
+
+.column > button {
+  padding: 5px 15px 5px 15px;
+  background-color: #FBF6EF;
+  border: 1px solid #000000;
+  border-radius: 10px;
+  display: flex;
+  margin: 8px 0 0 0;
+  align-self: center;
+}
+
+.addCardContainer {
+  display: flex;
+  flex-wrap: wrap;
+  flex-direction: row;
+}
+
+.column > div > input {
+  font-size: 20px;
+  background-color: #FBF6EF;
+  border: 1px solid #000000;
+  border-radius: 4px;
+  margin: 8px 0 0 8px;
+  min-width: 0;
+  flex: 1 1 0;
+}
+
+
+.addcard{
+  padding: 5px 15px 5px 15px;
+  background-color: #FBF6EF;
+  border: 1px solid #000000;
+  border-radius: 4px;
+  margin: 8px 0 0 8px;
+  min-width: 0;
+  max-width: fit-content;
+  flex: 1 1 0;
+}
+
+.column > button > img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain; 
+  align-self: center;
+  margin-right: 5px;
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  background-color: #FBF6EF;
+  padding: 16px;
+  border-radius: 10px;
+  margin-top: 8px;
+
+
+  /*ограничения для ширины карточки*/
+  width: 100%;           
+  max-width: 100%;       
+  box-sizing: border-box; 
+  min-width: 0;          
+}
+
+.cardheader {
+  display: flex;
+  align-items: flex-start;
+
+  min-width: 0;          
+  width: 100%;           
+}
+
+.cardheader > button {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  width: 24px;
+  height: 24px;
+  background: none;
+  flex: 0 0 auto; 
+}
+
+.cardheader > button > img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain; /* или cover */
+}
+
+.cardheader > h2 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 400;
+  min-width: 0;
+  flex: 1 1 auto;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+
+.card > h2 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 400;          
+  
+ 
+  min-width: 0;          
+  flex: 1 1 auto;        
+  width: 100%;           
+  
+ 
+  word-break: break-word;
+  overflow-wrap: break-word;
+  white-space: normal;
+}
+
+
+.card > button {
+  flex: 1;
+  margin: 12px 0 12px 0;
+  padding: 8px;
+  border: 1px solid #000000;
+  border-radius: 8px;
+  display: flex;
+  place-content: center;
+  background-color: #FBF6EF;
+}
+
+.card > button > img {
+  height: 16px;
+  margin-right: 8px;
+  object-fit: contain; /* или cover */
+}
+
+.card > div > input {
+  font-size: 16px;
+  background-color: #FBF6EF;
+  border: 1px solid #000000;
+  border-radius: 4px;
+  flex: 1;
+  margin: 8px 0 8px 0;
+}
+
+.addtask{
+  padding: 4px 12px 4px 12px;
+  background-color: #FBF6EF;
+  border: 1px solid #000000;
+  border-radius: 4px;
+  margin: 0 0 4px 4px;
+}
+
+.tasklist {
+  margin: 0;
+  padding: 0;
+  list-style-type: none;
+}
+
+.tasklist > li {
+  display: flex;
+  word-break: break-word;
+  overflow-wrap: break-word;
+}
+
+.tasklist button {
+  background: none;
+  border: 0;
+  margin: 0;
+  margin-right: 8px;
+  padding: 0;
+}
+
+.done {
+  font-weight: 700;
+}

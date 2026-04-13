@@ -1,0 +1,17 @@
+.container {
+  max-width: 400px;
+  margin: 40px auto;
+  padding: 20px;
+  background: #FBF6EF;
+  border-radius: 10px;
+  align-self: center;
+}
+.block {
+  margin-top: 20px;
+  margin: 10px;
+}
+
+.user {
+  padding: 5px;
+  border-bottom: 1px solid #ddd;
+}
