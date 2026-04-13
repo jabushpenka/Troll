@@ -9,13 +9,18 @@ function Header(){
 
   if (loading) return null;
 
+  const logout = async () => {
+    userLogout();
+    openRegister();
+  }
+
   const username = user?.user_name;
   const profileSection = () => {
   if (user) {
     return (
       <>
         <span>{username}</span>
-        <span onClick={userLogout}>Выйти</span>
+        <span onClick={() => logout()}>Выйти</span>
       </>
     );
   }

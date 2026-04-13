@@ -39,6 +39,7 @@ export default function Register() {
     localStorage.setItem('token', token);
 
     if (isLogin) {
+      userLogin(token);
       setMessage('ВХОД ВЫПОЛНЕН');
     } else {     
       setMessage('РЕГИСТРАЦИЯ ВЫПОЛНЕНА');
