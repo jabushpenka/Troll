@@ -89,6 +89,8 @@ button,h2,h3,span,input, ul, li{
   min-width:250px;
   flex-shrink: 0;
   height: min-content;
+
+  max-width: 300px;
 }
 
 .columns::-webkit-scrollbar {
@@ -104,11 +106,20 @@ button,h2,h3,span,input, ul, li{
   display: flex;
   flex-wrap: nowrap;
   justify-content: space-between;
+
+  min-width: 0;           
+  width: 100%;            
+  max-width: 300px;      
 }
 
 .columnheader > h2 {
   margin: 10px;
   font-family: 'AnonymousPro-Bold';
+
+  min-width: 0;           
+  width: 100%;            
+  overflow-wrap: break-word;  
+  word-break: break-word;
 }
 
 .updateColumnName {
@@ -120,7 +131,7 @@ button,h2,h3,span,input, ul, li{
 .updateColumnName > input{
   background: none;
   border: none;
-  font-size: 24px;
+  font-size: 36px;
   margin: 10px;
   height: min-content;
   font-family: 'AnonymousPro-Bold';
@@ -242,11 +253,21 @@ button,h2,h3,span,input, ul, li{
   padding: 16px;
   border-radius: 10px;
   margin-top: 8px;
+
+
+  /*ограничения для ширины карточки*/
+  width: 100%;           
+  max-width: 100%;       
+  box-sizing: border-box; 
+  min-width: 0;          
 }
 
 .cardheader {
   display: flex;
   align-items: flex-start;
+
+  min-width: 0;          
+  width: 100%;           
 }
 
 .cardheader > button {
@@ -274,6 +295,24 @@ button,h2,h3,span,input, ul, li{
   word-wrap: break-word;
   overflow-wrap: break-word;
 }
+
+
+.card > h2 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 400;          
+  
+ 
+  min-width: 0;          
+  flex: 1 1 auto;        
+  width: 100%;           
+  
+ 
+  word-break: break-word;
+  overflow-wrap: break-word;
+  white-space: normal;
+}
+
 
 .card > button {
   flex: 1;
