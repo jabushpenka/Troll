@@ -27,12 +27,18 @@ button,h2,h3,span,input, ul, li{
   flex-direction: column;
   padding: 16px;
   margin-right: 23vw;
-  margin-top:8vh;
   margin-left: 5%;
+}
+
+.boardname {
+  display: flex;
+  flex-wrap: nowrap;
+  flex-direction: row;
 }
 
 .boardname > h1 {
   font-size: 48px;
+  margin-right: 12px;
 }
 
 .boardheader {
@@ -65,6 +71,14 @@ button,h2,h3,span,input, ul, li{
   scrollbar-width: thin;
   scrollbar-color: #bbbbbb transparent;
 }
+
+.columns::after {
+  content: "";
+  display: inline-block;
+  flex: 0 0 20vw;
+  height: 1px;
+}
+
 
 .column {
   display: flex;
