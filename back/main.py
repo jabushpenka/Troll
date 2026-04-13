@@ -116,7 +116,6 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(securit
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
         username = payload.get("sub")
-        print('check_user')
         return username
     except jwt.PyJWTError:
         raise HTTPException(status_code=401, detail="Invalid token")
@@ -245,7 +244,6 @@ def create_board(data: BoardCreate):
     except Exception as e:
         cancel(e)
     result = {"board_id": board_id, "owner_id": owner_id, "address": address}
-    print(result)
     return result
 
 
@@ -334,7 +332,6 @@ def give_role(link: Link):
 # Проверить роль пользователя на доске
 @app.get("/boards/{address}")
 def check_access(address: str, user_name: str = Depends(get_current_user)):
-    print('check_access')
     cur.execute("SELECT board_id FROM boards WHERE address = %s",
                 (address,))
     res = cur.fetchone()
@@ -379,7 +376,12 @@ def get_user_boards(user_name: str):
         cur.execute("SELECT * FROM boards WHERE board_id IN"
                     "(SELECT board_id FROM links WHERE user_id=%s);",
                     (user_id,))
-        result = cur.fetchall()
+        #преобразую из list(tuple) в list(dict) 
+        rows = cur.fetchall()
+        columns = [desc[0] for desc in cur.description]
+
+        result = [dict(zip(columns, row)) for row in rows]
+        ###
         return result
     except Exception as e:
         cancel(e)
@@ -421,3 +423,8 @@ def get_roles(skip: int = 0, limit: int = 10):
     cur.execute("SELECT * FROM roles OFFSET %s LIMIT %s;",(skip,limit))
     result = cur.fetchall()
     return result
+
+# Получить имя пользователя / авторизация
+@app.get("/me")
+def get_me(user_name: str = Depends(get_current_user)):
+    return {"user_name": user_name}

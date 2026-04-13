@@ -3,7 +3,7 @@ import {nanoid} from 'nanoid';
 import style from '../styles/Register.module.css'
 import { createBoard } from '../api.jsx';
 import { useNavigation } from '../hooks/Navigation.jsx';
-
+import {useAuth} from '../AuthContext.jsx'
 
 export default function Register() {
   const [isLogin, setIsLogin] = useState(false);
@@ -12,7 +12,7 @@ export default function Register() {
   const [message, setMessage] = useState('');
   const email = nanoid(8) + "@" + nanoid(3);
   const {openBoard} =  useNavigation();
-
+  const {user, userLogin} = useAuth();
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -42,6 +42,7 @@ export default function Register() {
       setMessage('ВХОД ВЫПОЛНЕН');
     } else {     
       setMessage('РЕГИСТРАЦИЯ ВЫПОЛНЕНА');
+      userLogin(token);
       const boardData = await createBoard(nanoid(10), login);
       const boardAddress = boardData.address;
       openBoard(boardAddress, login);

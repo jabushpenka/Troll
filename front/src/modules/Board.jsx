@@ -23,7 +23,7 @@ export default function Board() {
       .then(data => {setBoardData(data)}); 
   }, [address]);
 
-  const [newColumnName, setNewColumnName] = useState("");
+  const [newColumnName, setNewColumnName] = useState("Новая колонка");
   const [updateActiveColumn, setUpdateActiveColumn] = useState({colId: null, title: ""});
 
   const [activeCard, setActiveCard] = useState({colId: null, title: ""})
@@ -40,7 +40,7 @@ export default function Board() {
       newBoard.columns = [...newBoard.columns, {id: nanoid(),title: newColumnName, cards: []}];
       return newBoard;});
 
-    setNewColumnName("");
+    setNewColumnName("Новая колонка");{/*хардкод, убрать*/}
   };
 
   const addCard = (colId) => {
@@ -228,6 +228,7 @@ export default function Board() {
           <div className={styles.updateColumnName}>
             <input
               autoFocus
+              maxLength={35}
               value={updateActiveColumn.title}
               onChange={(e) => setUpdateActiveColumn(prev => ({...prev, title: e.target.value}))}
               onKeyDown={(e) => updateColumnKeyPress(e)} 
@@ -259,6 +260,7 @@ export default function Board() {
           <div className={styles.updateCardName}>
             <input
               autoFocus
+              maxLength={80}
               value={updateActiveCard.title}
               onChange={(e) => setUpdateActiveCard(prev => ({...prev, title: e.target.value}))}
               onKeyDown={(e) => updateCardKeyPress(e)} 
@@ -290,6 +292,7 @@ export default function Board() {
             <div className={styles.addCardContainer}>
               <input
                 autoFocus
+                maxLength={50}
                 value={activeCard.title}
                 onChange={(e) => setActiveCard(prev => ({...prev, title: e.target.value}))}
                 onKeyDown={(e) => addCardKeyPress(e,col.id)}
@@ -342,6 +345,7 @@ export default function Board() {
       <div>
         <input
           autoFocus
+          maxLength={50}
           value={activeTask.title}
           onChange={(e) => setActiveTask(prev => ({...prev, title: e.target.value}))}
           onKeyDown={(e) => addTaskKeyPress(e,colId,cardId)}
@@ -367,26 +371,16 @@ export default function Board() {
   return (
     
     <div className={styles.board}>
-      {/* <div className={styles.boardheader}>
-        <input
-          placeholder="Новая колонка"
-          value={newColumnName}
-          onChange={(e) => setNewColumnName(e.target.value)}
-          onKeyDown={(e) => addColumnKeyPress(e)}
-        />
-        <button className={styles.addcolumn} onClick={() => addColumn()}>Добавить колонку</button>
+      <div className={styles.boardname}>
+        <h1>Название доски</h1>{/*хардкод, убрать */}
         <button className={styles.addcolumn} onClick={async () => {
-          await fetch("http://130.49.148.168:8448/boards/228",{
+          await fetch(`http://130.49.148.168:8448/boards/${address}`,{
             method: "PUT",
             headers: {
               "Content-Type": "application/json",
             },
             body: JSON.stringify(boardData),
           })}}>Сохранить</button>
-      </div> */
-      }
-      <div className={styles.boardname}>
-        <h1>Название доски</h1>{/*хардкод, убрать */}
       </div>
 
       <div className={styles.columns}>
@@ -409,12 +403,11 @@ export default function Board() {
             {cardAddButton(col)}
           </div>
         ))}
-      </div>
-      
-      <button 
+       <button 
         className={styles.addcolumn}
-        onClick={() => {setNewColumnName("Новая колонка");addColumn()}}>
+        onClick={() => {addColumn()}}>
           добавить колонку</button>
+      </div>
 
       <Templates />
     </div>

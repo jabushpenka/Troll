@@ -37,4 +37,15 @@ h1,h2,h3,h4,h5,span,input {
 
 .profile > span {
     font-size: 20px;
+    margin:8px;
+}
+
+.layout{
+    display: flex;
+}
+
+.content {
+    display: flex;
+    margin-top:8vh;
+    width: 100%;
 }

@@ -3,7 +3,8 @@ import { useNavigate } from "react-router-dom"; //для использован�
 export function useNavigation() {
   const navigate = useNavigate();
   return {
-    openBoard: (address) => navigate(`/board/${address}`)
+    openBoard: (address) => navigate(`/board/${address}`),
+    openRegister: () => navigate('/register')
   };
 }
 
