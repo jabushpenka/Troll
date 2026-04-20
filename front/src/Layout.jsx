@@ -32,7 +32,7 @@ function Header(){
 
   return (
     <div className={styles.header}>
-      <span>TROLL</span>
+      <span onClick={() => openMain()}>TROLL</span>
       <div className={styles.profile}>
         {profileSection()}
       </div>
