@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { BrowserRouter, Routes, Route, useLoaderData } from "react-router-dom";
 import {createBrowserRouter, RouterProvider, redirect} from "react-router-dom";
 import Board from "./modules/Board.jsx";
@@ -16,17 +16,122 @@ function Home() {
  /*LIST OF OBJECTS{ board_id: 28, board_name: "New Board", address: "rHKzQ6Z_0z", about: "Board description", contents: {…} } */
   const {openBoard} =  useNavigation();
   const { user } = useAuth();
+  const [isOpen, setIsOpen] = useState(false);
+  const [isEdit, setIsEdit] = useState(false);
+  const [selectedBoard, setSelectedBoard] = useState(null);
+
+  const username = user.user_name;
+
+  const Modal = ({ isOpen, onClose, address, initialName, initialAbout, isEdit}) => {
+    const [boardName, setBoardName] = useState("");
+    const [about, setAbout] = useState("");
+
+    // 🔥 заполняем поля при открытии / смене доски
+    useEffect(() => {
+      if (isOpen) {
+        setBoardName(initialName || "Новая Доска");
+        setAbout(initialAbout || "Описание доски");
+      }
+    }, [isOpen, initialName, initialAbout]);
+
+    if (!isOpen) return null;
+
+    const saveBoardChanges = async () => {
+      if (isEdit){
+        const boardInfo = {
+          board_name: boardName,
+          about: about,
+        };
+
+        await fetch(`http://130.49.148.168:8448/boards-info/${address}`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(boardInfo),
+        });
+
+      }
+      else {
+        createBoard(address,username,boardName,about)
+      }
+
+      onClose();
+    };
+
+    const keyPress = (e) => {
+      if (e.key === 'Escape'){
+        onClose();
+      }
+    };
+
+    return (
+      <div className={styles.overlayEditBoard} onClick={onClose} onKeyDown={(e) => keyPress(e)}>
+        <div
+          className={styles.editBoard}
+          onClick={(e) => e.stopPropagation()} // чтобы клик внутри не закрывал
+        >
+          <h2>Редактирование доски</h2>
+
+          <input
+            autoFocus
+            value={boardName}
+            onChange={(e) => setBoardName(e.target.value)}
+            placeholder="Название"
+            maxLength={40}
+          />
+
+          <textarea
+            value={about}
+            onChange={(e) => setAbout(e.target.value)}
+            placeholder="Описание"
+            maxLength={200}
+          />
+
+          <button onClick={saveBoardChanges}>
+            Сохранить изменения
+          </button>
+        </div>
+      </div>
+    );
+  };
+
   const boardList = () => {
-    return(
-      <ul className={styles.boardlist}>
-        {boards.map(board => (
-          <li key={board.board_id} onClick={() => openBoard(board.address)}>
-              {board.board_name}
-          </li>
-        ))}
-      </ul>
-    )
-  }
+    return (
+      <>
+        <ul className={styles.boardlist}>
+          {boards.map(board => (
+            <li key={board.board_id}>
+              <span onClick={() => openBoard(board.address)}>
+                {board.board_name}
+              </span>
+
+              <button
+                onClick={() => {
+                  setSelectedBoard(board);
+                  setIsEdit(true);
+                  setIsOpen(true);
+                }}
+              >
+                Редактировать
+              </button>
+            </li>
+          ))}
+        </ul>
+
+        {isOpen && selectedBoard && (
+          <Modal
+            isOpen={isOpen}
+            address={selectedBoard.address}
+            initialName={selectedBoard.board_name}
+            initialAbout={selectedBoard.about}
+            onClose={() => {setIsEdit(true);setIsOpen(false)}}
+            isEdit={isEdit}
+          />
+        )}
+      </>
+    );
+  };
 
   
 
@@ -36,7 +141,14 @@ function Home() {
       <div className={styles.boardlistContainer}>
         {boardList()}
       </div>
-      <button onClick={() => createBoard(nanoid(10),user.user_name)}>Создать доску</button>
+      <button
+        onClick={() => {
+        setSelectedBoard({board_name: "Новая доска", address: nanoid(10), about: "Описание доски"});
+        setIsEdit(false);
+        setIsOpen(true);
+      }}>
+        Создать доску
+      </button>
     </div>
   );
 }
@@ -115,7 +227,7 @@ const router = createBrowserRouter([
 export default function App() {
   return(
     <AuthProvider>
-      <RouterProvider router={router} />;
+      <RouterProvider router={router} />
     </AuthProvider>
   )
 }
