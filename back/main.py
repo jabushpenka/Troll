@@ -1,13 +1,18 @@
+import datetime
+
 import psycopg2
 import json
-from fastapi import FastAPI, HTTPException, Depends
+from fastapi import FastAPI, HTTPException, Depends, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
 from passlib.context import CryptContext
 from jose import jwt
 from dotenv import load_dotenv
 import os
+
+import htmltest
 
 # переменные окружения
 load_dotenv()
@@ -50,6 +55,7 @@ class User(BaseModel):
     email: str
     photo: str | None = "default.png"
 
+
 class Task(BaseModel):
     id: str
     text: str
@@ -71,6 +77,7 @@ class Column(BaseModel):
 class BoardContents(BaseModel):
     columns: list[Column]
 
+
 class Board(BaseModel):
     board_name: str
     address: str
@@ -83,9 +90,8 @@ class Link(BaseModel):
     address: str
     role_name: str = "Worker"
 
+
 # модели объектов с доски, пожалуйста спид мне это нужно
-
-
 # модель для логина
 class Login(BaseModel):
     login: str
@@ -100,9 +106,11 @@ class BoardCreate(BaseModel):
 def hash_password(password: str):
     return pwd_context.hash(password)
 
+
 # проверка пароля
 def verify_password(password: str, hashed: str):
     return pwd_context.verify(password, hashed)
+
 
 # отмена изменений для undocumented случаев
 def cancel(error: Exception):
@@ -110,7 +118,10 @@ def cancel(error: Exception):
     print(error)
     raise HTTPException(status_code=400, detail=str(error))
 
+
 security = HTTPBearer()
+
+
 def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
     token = credentials.credentials
     try:
@@ -119,6 +130,7 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(securit
         return username
     except jwt.PyJWTError:
         raise HTTPException(status_code=401, detail="Invalid token")
+
 
 # Регистрация нового пользователя
 @app.post("/register")
@@ -137,13 +149,15 @@ def register_user(user: User):
                     (user_name, hashed, email, photo))
         result = cur.fetchone()
         conn.commit()
-        
+
     except Exception as e:
         cancel(e)
+        return
 
     token = jwt.encode({"sub": user_name}, SECRET_KEY, algorithm="HS256")  # sha256 с ключом
 
     return {"user": result, "access_token": token}
+
 
 # Проверка данных пользователя (логин)
 @app.post("/login")
@@ -174,9 +188,10 @@ def login_user(login_info: Login):
 # Получить пользователей (для дебага)
 @app.get("/users")
 def get_users(skip: int = 0, limit: int = 10):
-    cur.execute("SELECT * FROM users OFFSET %s LIMIT %s;",(skip,limit))
+    cur.execute("SELECT * FROM users OFFSET %s LIMIT %s;", (skip, limit))
     result = cur.fetchall()
     return result
+
 
 # Удалить пользователя по имени
 @app.delete("/users/{user_name}")
@@ -195,7 +210,7 @@ def delete_user(user_name: str):
 # Получить доски (для дебага)
 @app.get("/boards")
 def get_boards(skip: int = 0, limit: int = 10):
-    cur.execute("SELECT * FROM boards OFFSET %s LIMIT %s;",(skip,limit))
+    cur.execute("SELECT * FROM boards OFFSET %s LIMIT %s;", (skip, limit))
     result = cur.fetchall()
     return result
 
@@ -206,7 +221,7 @@ def create_board(data: BoardCreate):
     board = data.board
     owner_name = data.owner_name
 
-    cur.execute("SELECT user_id FROM users WHERE user_name = %s",(owner_name,))
+    cur.execute("SELECT user_id FROM users WHERE user_name = %s", (owner_name,))
     res = cur.fetchone()
     if not bool(res):
         raise HTTPException(status_code=400, detail="Owner does not exist")
@@ -262,7 +277,6 @@ def delete_board(address: str):
         cancel(e)
 
 
-
 # Получить все связи (для дебага)
 @app.get("/links")
 def get_links(skip: int = 0, limit: int = 10):
@@ -273,7 +287,7 @@ def get_links(skip: int = 0, limit: int = 10):
                 "INNER JOIN "
                 "roles ON links.role_id = roles.role_id ) "
                 "OFFSET %s LIMIT %s;",
-                (skip,limit))
+                (skip, limit))
     result = cur.fetchall()
     return result
 
@@ -307,7 +321,6 @@ def give_role(link: Link):
         raise HTTPException(status_code=400, detail="Role does not exist")
     role_id = res[0]
 
-
     # Сохраняем в базу
     try:
         cur.execute("SELECT * FROM links WHERE user_id = %s AND board_id = %s",
@@ -318,9 +331,9 @@ def give_role(link: Link):
                         "(%s,%s,%s) RETURNING user_id,board_id,role_id;",
                         (user_id, board_id, role_id))
         else:
-            cur.execute("UPDATE links SET role_id = %s WHERE user_id = %s AND board_id = %s RETURNING user_id, board_id, role_id;",
-                        (role_id, user_id, board_id))
-
+            cur.execute(
+                "UPDATE links SET role_id = %s WHERE user_id = %s AND board_id = %s RETURNING user_id, board_id, role_id;",
+                (role_id, user_id, board_id))
 
         result = cur.fetchone()
         conn.commit()
@@ -363,6 +376,7 @@ def check_access(address: str, user_name: str = Depends(get_current_user)):
     result = {"Access level": role_name}
     return result
 
+
 # Получить все доски пользователя по имени
 @app.get("/user-boards/{user_name}")
 def get_user_boards(user_name: str):
@@ -376,7 +390,7 @@ def get_user_boards(user_name: str):
         cur.execute("SELECT * FROM boards WHERE board_id IN"
                     "(SELECT board_id FROM links WHERE user_id=%s);",
                     (user_id,))
-        #преобразую из list(tuple) в list(dict) 
+        # преобразую из list(tuple) в list(dict)
         rows = cur.fetchall()
         columns = [desc[0] for desc in cur.description]
 
@@ -386,6 +400,7 @@ def get_user_boards(user_name: str):
     except Exception as e:
         cancel(e)
 
+
 # Получить содержимое доски по адресу
 @app.get("/board/{address}")
 def get_board_data(address: str):
@@ -393,9 +408,10 @@ def get_board_data(address: str):
                 (address,))
     result = cur.fetchone()
     if not bool(result):
-        return {"error" : "Board does not exist"}
+        return {"error": "Board does not exist"}
 
-    return result[0] #возвращает объект, а не список
+    return result[0]  # возвращает объект, а не список
+
 
 # изменение на доске по адресу
 @app.put("/boards/{address}")
@@ -420,7 +436,7 @@ def update_board(address: str, board_contents: BoardContents):
 # Получить все роли (для дебага)
 @app.get("/roles")
 def get_roles(skip: int = 0, limit: int = 10):
-    cur.execute("SELECT * FROM roles OFFSET %s LIMIT %s;",(skip,limit))
+    cur.execute("SELECT * FROM roles OFFSET %s LIMIT %s;", (skip, limit))
     result = cur.fetchall()
     return result
 
@@ -428,3 +444,57 @@ def get_roles(skip: int = 0, limit: int = 10):
 @app.get("/me")
 def get_me(user_name: str = Depends(get_current_user)):
     return {"user_name": user_name}
+
+html = htmltest.html
+
+class Connection:
+    def __init__(self, websocket: WebSocket, board_address: str, user_name: str):
+        self.websocket = websocket
+        self.board_address = board_address
+        self.user_name = user_name
+
+class ConnectionManager:
+    def __init__(self):
+        self.active_connections: list[Connection] = []
+
+    async def connect(self, websocket: WebSocket, board_name: str, user_name: str):
+        await websocket.accept()
+        connection = Connection(websocket, board_name, user_name)
+        self.active_connections.append(connection)
+
+    def disconnect(self, websocket: WebSocket):
+        for connection in self.active_connections:
+            if connection.websocket == websocket:
+                self.active_connections.remove(connection)
+
+    async def send_personal_message(self, message: str, websocket: WebSocket):
+        await websocket.send_text(message)
+
+    async def broadcast(self, board_address: str, user_name: str, message: str):
+        for connection in self.active_connections:
+            if connection.board_address == board_address and connection.user_name != user_name:
+                await connection.websocket.send_text(message)
+
+
+manager = ConnectionManager()
+
+
+@app.get("/{board_address}")
+async def get():
+    return HTMLResponse(html)
+
+@app.websocket("/ws/{board_address}/{user_name}")
+async def websocket_endpoint(websocket: WebSocket, board_address, user_name: str):
+    await manager.connect(websocket, board_address, user_name)
+    time = f"{datetime.datetime.now().time().minute}:{datetime.datetime.now().time().second:02}"
+    await manager.broadcast(board_address, user_name, f"{time} {user_name} подключился")
+    try:
+        while True:
+            data = await websocket.receive_text()
+            time = f"{datetime.datetime.now().time().minute}:{datetime.datetime.now().time().second:02}"
+            await manager.send_personal_message(f"{time} Вы сделали: {data}", websocket)
+            await manager.broadcast(board_address, user_name, f"{time} {user_name} сделал: {data}")
+    except WebSocketDisconnect:
+        manager.disconnect(websocket)
+        time = f"{datetime.datetime.now().time().minute}:{datetime.datetime.now().time().second:02}"
+        await manager.broadcast(board_address, user_name, f"{time} {user_name} отключился")
