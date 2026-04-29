@@ -14,6 +14,7 @@ import changeapply from '../assets/change-apply.svg';
 
 export default function Board() {
   const [boardData,setBoardData] = useState({columns: []});
+  const [boardInfo, setBoardInfo] = useState({board_name: "Название доски", about: "Описание доски"})
 
   const { address } = useParams();
 
@@ -22,6 +23,14 @@ export default function Board() {
       .then(res => res.json())
       .then(data => {setBoardData(data)}); 
   }, [address]);
+
+  useEffect(() => {
+    fetch(`http://130.49.148.168:8448/board-info/${address}`)
+      .then(res => res.json())
+      .then(data => {setBoardInfo(data)}); 
+  }, [address]);
+
+  const [updateBoardName, setUpdateBoardName] = useState({board_name: boardInfo.board_name, active: false});
 
   const [newColumnName, setNewColumnName] = useState("Новая колонка");
   const [updateActiveColumn, setUpdateActiveColumn] = useState({colId: null, title: ""});
@@ -98,6 +107,18 @@ export default function Board() {
 
   //другое
   //изменение названий
+  const updateBoardInfo = () => {
+    const title = updateBoardName.board_name;
+    if(!title.trim()){
+      setUpdateBoardName(prev => ({...prev, active: false}));
+      return
+    }
+    else{
+    setUpdateBoardName(prev => ({...prev, active: false}));
+    setBoardInfo(prev => ({...prev,board_name: title}));
+    }
+  }
+
   const updateColumnTitle = () => {
     const colId = updateActiveColumn.colId;
     const title = updateActiveColumn.title;
@@ -114,8 +135,7 @@ export default function Board() {
         )}
       ))
       setUpdateActiveColumn({colId: null, title: ""})
-    }
-
+  };
 
   const updateCardTitle = () => {
     const colId = updateActiveCard.colId;
@@ -196,6 +216,17 @@ export default function Board() {
     }
   };
 
+  const updateBoardKeyPress = (e) => {
+    if (e.key === 'Enter'){
+      e.preventDefault();
+      updateBoardInfo();
+      return;
+    }
+    if (e.key === 'Escape'){
+      setUpdateBoardName({board_name: boardInfo.board_name, active: false});
+    }
+  }
+
   const updateColumnKeyPress = (e) => {
     if (e.key === 'Enter' || e.key === 'Escape'){
       e.preventDefault();
@@ -221,6 +252,38 @@ export default function Board() {
   
   //элементы
   
+  const boardName = () => {
+    return (
+      (updateBoardName.active == true)
+        ? (
+          <div className={styles.updateBoardName}>
+            <input 
+              autoFocus
+              maxLength={40}
+              value={updateBoardName.board_name}
+              onChange={(e) => setUpdateBoardName(prev => ({...prev, board_name: e.target.value}))}
+              onKeyDown={(e) => updateBoardKeyPress(e)}
+              onBlur={() => {
+                if (updateBoardName.board_name.trim()){
+                  updateBoardInfo();
+                }
+                else{
+                  setUpdateBoardName(prev => ({...prev, active: false}));
+                }
+              }}
+            />
+            <button onMouseDown={
+                (e) => {
+                  e.preventDefault(); 
+                  updateBoardInfo();
+                }}>
+                <img src={changeapply}/></button>
+          </div>
+        )
+        : <h1 onClick={() => {setUpdateBoardName({board_name: boardInfo.board_name, active: true})}}>{boardInfo.board_name}</h1>
+    )
+  }
+
   const columnTitle = (col) => {
     return (
       (updateActiveColumn.colId == col.id) 
@@ -234,7 +297,7 @@ export default function Board() {
               onKeyDown={(e) => updateColumnKeyPress(e)} 
               onBlur={() => {
                 if (updateActiveColumn.title.trim()){
-                  updateColumnTitle(col.id, updateActiveColumn.title)
+                  updateColumnTitle()
                 }
                 else{
                   setUpdateActiveColumn({colId: null, title: ""})
@@ -244,7 +307,7 @@ export default function Board() {
             <button onMouseDown={
               (e) => {
                 e.preventDefault(); 
-                updateColumnTitle(col.id,updateActiveColumn.title);
+                updateColumnTitle();
               }}>
               <img src={changeapply}/></button>
             </div>
@@ -372,7 +435,7 @@ export default function Board() {
     
     <div className={styles.board}>
       <div className={styles.boardname}>
-        <h1>Название доски</h1>{/*хардкод, убрать */}
+        {boardName()}
         <button className={styles.addcolumn} onClick={async () => {
           await fetch(`http://130.49.148.168:8448/boards/${address}`,{
             method: "PUT",
@@ -380,7 +443,15 @@ export default function Board() {
               "Content-Type": "application/json",
             },
             body: JSON.stringify(boardData),
-          })}}>Сохранить</button>
+          });
+          await fetch(`http://130.49.148.168:8448/boards-info/${address}`,{
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(boardInfo),
+          });
+          }}>Сохранить</button>
       </div>
 
       <div className={styles.columns}>

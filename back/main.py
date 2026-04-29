@@ -84,6 +84,9 @@ class Board(BaseModel):
     about: str | None
     contents: BoardContents | None
 
+class BoardUpdate(BaseModel):
+    board_name: str
+    about: str
 
 class Link(BaseModel):
     user_name: str
@@ -413,9 +416,22 @@ def get_board_data(address: str):
     return result[0]  # возвращает объект, а не список
 
 
+@app.get("/board-info/{address}")
+def get_board_info(address: str):
+    cur.execute("SELECT board_name, about FROM boards WHERE address = %s;",
+                (address,))
+    row = cur.fetchone()
+    if not bool(row):
+        raise HTTPException(status_code=404, detail="Board not found")
+    
+    columns = [desc[0] for desc in cur.description]
+    result = dict(zip(columns, row))
+
+    return result
+
 # изменение на доске по адресу
 @app.put("/boards/{address}")
-def update_board(address: str, board_contents: BoardContents):
+def update_board_data(address: str, board_contents: BoardContents):
     contents_json = json.dumps(board_contents.model_dump())
 
     cur.execute("SELECT board_id FROM boards WHERE address = %s;",
@@ -430,6 +446,27 @@ def update_board(address: str, board_contents: BoardContents):
         result = cur.fetchone()
         conn.commit()
         return result
+    except Exception as e:
+        cancel(e)
+
+@app.put("/boards-info/{address}")
+def update_board_info(address: str, board: BoardUpdate): 
+    board_data = board.model_dump()
+    board_name = board_data["board_name"]
+    board_about = board_data["about"]
+
+    try:
+        cur.execute(
+            "UPDATE boards SET board_name = %s, about = %s WHERE address = %s RETURNING address, board_name, about",
+            (board_name, board_about, address))
+        result = cur.fetchone()
+
+        if not result:
+            raise HTTPException(status_code=404, detail="Board not found")
+
+        conn.commit()
+        return result
+    
     except Exception as e:
         cancel(e)
 

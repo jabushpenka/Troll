@@ -11,7 +11,7 @@ export default function Register() {
   const [password, setPassword] = useState('');
   const [message, setMessage] = useState('');
   const email = nanoid(8) + "@" + nanoid(3);
-  const {openBoard} =  useNavigation();
+  const {openBoard, openMain} =  useNavigation();
   const {user, userLogin} = useAuth();
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -41,6 +41,7 @@ export default function Register() {
     if (isLogin) {
       userLogin(token);
       setMessage('ВХОД ВЫПОЛНЕН');
+      openMain();
     } else {     
       setMessage('РЕГИСТРАЦИЯ ВЫПОЛНЕНА');
       userLogin(token);

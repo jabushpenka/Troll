@@ -4,7 +4,8 @@ export function useNavigation() {
   const navigate = useNavigate();
   return {
     openBoard: (address) => navigate(`/board/${address}`),
-    openRegister: () => navigate('/register')
+    openRegister: () => navigate('/register'),
+    openMain: () => navigate('/')
   };
 }
 
