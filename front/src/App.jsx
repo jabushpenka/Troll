@@ -26,7 +26,6 @@ function Home() {
     const [boardName, setBoardName] = useState("");
     const [about, setAbout] = useState("");
 
-    // 🔥 заполняем поля при открытии / смене доски
     useEffect(() => {
       if (isOpen) {
         setBoardName(initialName || "Новая Доска");
@@ -206,7 +205,6 @@ const router = createBrowserRouter([
           if (!res.ok) {
             throw redirect("/");
           }
-          console.log(params.address);
 
           return null;
         },

@@ -2,7 +2,9 @@ import styles from "../styles/Board.module.css";
 import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom"; //для использования данных, полученных при переходе через navigate
 import {nanoid} from "nanoid";
+import { useAuth } from "../AuthContext.jsx";
 import Templates from "./Templates.jsx";
+import Connections from "./Connections.jsx";
 
 import trashbold from '../assets/trash-bold.svg';
 import trashregular from '../assets/trash-regular.svg';
@@ -13,6 +15,9 @@ import taskbutton from '../assets/task-button.svg';
 import changeapply from '../assets/change-apply.svg';
 
 export default function Board() {
+  const { user } = useAuth();
+  const username = user.user_name;
+
   const [boardData,setBoardData] = useState({columns: []});
   const [boardInfo, setBoardInfo] = useState({board_name: "Название доски", about: "Описание доски"})
 
@@ -481,6 +486,8 @@ export default function Board() {
       </div>
 
       <Templates />
+
+      <Connections userName={username} boardAddress={address}/>
     </div>
   );
 }

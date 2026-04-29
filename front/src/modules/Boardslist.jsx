@@ -18,8 +18,6 @@ export default function Boardslist() {
     .then(data => setUserName(data));}
     , []);
 
-    // console.log(userName);
-    console.log(url+"userboards/"+228)
     useEffect(() => {fetch(url+"userboards/"+228,{
         method: "GET",
         headers: {
