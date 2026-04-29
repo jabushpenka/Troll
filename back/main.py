@@ -1,4 +1,4 @@
-import datetime
+from datetime import datetime
 
 import psycopg2
 import json
@@ -498,19 +498,37 @@ class ConnectionManager:
         await websocket.accept()
         connection = Connection(websocket, board_name, user_name)
         self.active_connections.append(connection)
+        await self.broadcast_connections(board_name)
 
     def disconnect(self, websocket: WebSocket):
+        board_address = None
         for connection in self.active_connections:
             if connection.websocket == websocket:
+                board_address = connection.board_address
                 self.active_connections.remove(connection)
+                break
+        return board_address
 
     async def send_personal_message(self, message: str, websocket: WebSocket):
         await websocket.send_text(message)
-
-    async def broadcast(self, board_address: str, user_name: str, message: str):
+                                                                #чуть чуть умнее чем str 
+    async def broadcast(self, board_address: str, user_name: str, message: dict):
         for connection in self.active_connections:
             if connection.board_address == board_address and connection.user_name != user_name:
                 await connection.websocket.send_text(message)
+
+    async def broadcast_connections(self, board_address: str):
+        users = [
+            connection.user_name
+            for connection in self.active_connections if connection.board_address == board_address
+        ]
+
+        for connection in self.active_connections:
+            if connection.board_address == board_address:
+                await connection.websocket.send_json({
+                    "type": "connections",
+                    "users": users
+                })
 
 
 manager = ConnectionManager()
@@ -523,15 +541,29 @@ async def get():
 @app.websocket("/ws/{board_address}/{user_name}")
 async def websocket_endpoint(websocket: WebSocket, board_address, user_name: str):
     await manager.connect(websocket, board_address, user_name)
-    time = f"{datetime.datetime.now().time().minute}:{datetime.datetime.now().time().second:02}"
+    await manager.broadcast_connections(board_address) 
+    time = f"{datetime.now().time().minute}:{datetime.now().time().second:02}"
     await manager.broadcast(board_address, user_name, f"{time} {user_name} подключился")
     try:
         while True:
-            data = await websocket.receive_text()
-            time = f"{datetime.datetime.now().time().minute}:{datetime.datetime.now().time().second:02}"
+            data = await websocket.receive_json()
+            time = f"{datetime.now().time().minute}:{datetime.now().time().second:02}"
+            #это просто для теста работоспособности websocket с фронтом, потом убрать
+            if data["type"] == "button_click":
+                await websocket.send_json({ #тому кто нажал; надо будет выбрать между ws.send_json и manager.send_personal_message
+                    "type": "info",
+                    "message": f"{time} Вы нажали кнопку"
+                })
+                await manager.broadcast(board_address, user_name, { # остальным
+                    "type": "button_click",
+                    "message": f"{time} {user_name} нажал кнопку"
+                })
             await manager.send_personal_message(f"{time} Вы сделали: {data}", websocket)
             await manager.broadcast(board_address, user_name, f"{time} {user_name} сделал: {data}")
     except WebSocketDisconnect:
-        manager.disconnect(websocket)
-        time = f"{datetime.datetime.now().time().minute}:{datetime.datetime.now().time().second:02}"
+        board_address = manager.disconnect(websocket)
+        if board_address:
+            await manager.broadcast_connections(board_address)
+
+        time = f"{datetime.now().time().minute}:{datetime.now().time().second:02}"
         await manager.broadcast(board_address, user_name, f"{time} {user_name} отключился")
