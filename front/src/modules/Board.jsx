@@ -16,6 +16,7 @@ import changeapply from '../assets/change-apply.svg';
 
 export default function Board() {
   const { user } = useAuth();
+  if (!user) return <div>Not authorized</div>;
   const username = user.user_name;
 
   const [boardData,setBoardData] = useState({columns: []});

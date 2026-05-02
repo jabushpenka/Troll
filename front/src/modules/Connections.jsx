@@ -1,9 +1,17 @@
 import React, { useEffect, useState, useRef } from "react";
+import styles from "../styles/Connections.module.css";
 
 export default function Connections({ boardAddress, userName }) {
     const [messages, setMessages] = useState([]);
     const [users, setUsers] = useState([]);
+    const [onlineUsers, setOnlineUsers] = useState([]);
     const ws = useRef(null);
+
+    useEffect(() => {
+        fetch(`http://130.49.148.168:8448/links/${boardAddress}`)
+        .then(res => res.json())
+        .then(data => {setUsers(data);console.log(data);}); 
+    }, [boardAddress]);
 
     useEffect(() => {
         ws.current = new WebSocket(
@@ -14,14 +22,19 @@ export default function Connections({ boardAddress, userName }) {
             const data = JSON.parse(event.data);
 
             if (data.type === "connections") {
-                setUsers(data.users);
+                setOnlineUsers(data.users);
+                console.log(data.users);
             } else {
                 setMessages((prev) => [...prev, data.message]);
             }
         };
 
-        ws.current.onclose = () => {
-            console.log("Disconnected");
+        ws.current.onclose = (event) => {
+            if (event.wasClean) {
+                console.log("Disconnected cleanly");
+            } else {
+                console.log("Unexpected disconnect");
+            }
         };
 
         return () => {
@@ -39,23 +52,17 @@ export default function Connections({ boardAddress, userName }) {
 
     return (
         <div>
-            <h3>Подключённые пользователи:</h3>
+            <h3>Пользователи:</h3>
             <ul>
-                {users.map((u, i) => (
-                    <li key={i}>{u}</li>
-                ))}
+                {users.map((user) => {
+                    return (
+                    <li 
+                    className={onlineUsers.includes(user.username) ? styles.online : ""}
+                    key={user.user_id}>
+                            {user.username}
+                    </li>)
+                })}
             </ul>
-
-            <button onClick={handleClick}>
-                Нажать кнопку
-            </button>
-
-            <h3>Сообщения:</h3>
-            <div>
-                {messages.map((msg, i) => (
-                    <div key={i}>{msg}</div>
-                ))}
-            </div>
         </div>
     );
 }

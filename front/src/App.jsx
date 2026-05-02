@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { BrowserRouter, Routes, Route, useLoaderData } from "react-router-dom";
 import {createBrowserRouter, RouterProvider, redirect} from "react-router-dom";
 import Board from "./modules/Board.jsx";
@@ -22,9 +22,12 @@ function Home() {
 
   const username = user.user_name;
 
-  const Modal = ({ isOpen, onClose, address, initialName, initialAbout, isEdit}) => {
+  const Modal = ({ isOpen, onClose, address, initialName, initialAbout, isEdit}) => { 
     const [boardName, setBoardName] = useState("");
     const [about, setAbout] = useState("");
+
+    const [activeAddUser, setActiveAddUser] = useState(false);
+    const [addUsernameValue, setAddUsernameValue] = useState("");
 
     useEffect(() => {
       if (isOpen) {
@@ -64,6 +67,35 @@ function Home() {
       }
     };
 
+    const addUser = async () => {
+      if (!addUsernameValue.trim()) return;
+      const res = await fetch(`http://130.49.148.168:8448/links`, {
+        method: 'POST',
+        credentials: "include",
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({user_name: addUsernameValue, address: address, role_name: 'Administrator'})
+      });
+
+      const data = await res.json();
+
+      console.log(data);
+      setAddUsernameValue("");
+    }
+
+    const addUserBlock = () => {
+      return (
+          <div className="addUserBlock">
+            <input
+              autoFocus
+              value={addUsernameValue}
+              onChange={(e) => setAddUsernameValue(e.target.value)}
+              placeholder="Юзернейм"
+            />
+            <button onClick={() => addUser()}>Добавить пользователя</button>
+          </div>
+        )
+    }
+
     return (
       <div className={styles.overlayEditBoard} onClick={onClose} onKeyDown={(e) => keyPress(e)}>
         <div
@@ -86,6 +118,8 @@ function Home() {
             placeholder="Описание"
             maxLength={200}
           />
+
+          {addUserBlock()}
 
           <button onClick={saveBoardChanges}>
             Сохранить изменения

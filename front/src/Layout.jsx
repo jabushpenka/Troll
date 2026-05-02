@@ -5,7 +5,7 @@ import { useNavigation } from './hooks/Navigation.jsx';
 
 function Header(){
   const { user, loading, userLogout } = useAuth();
-  const {openRegister} = useNavigation();
+  const {openRegister, openMain} = useNavigation();
 
   if (loading) return null;
 
