@@ -281,8 +281,8 @@ def delete_board(address: str):
 
 
 # Получить все связи (для дебага)
-@app.get("/links")
-def get_links(skip: int = 0, limit: int = 10):
+@app.get("/alllinks")
+def get_all_links(skip: int = 0, limit: int = 10):
     cur.execute("SELECT users.user_name, boards.address, roles.role_name FROM "
                 "( links INNER JOIN users ON links.user_id = users.user_id "
                 "INNER JOIN "
@@ -294,7 +294,30 @@ def get_links(skip: int = 0, limit: int = 10):
     result = cur.fetchall()
     return result
 
+# Получить всех пользователей доски
+@app.get("/links/{address}")
+def get_board_links(address: str):
+    cur.execute("SELECT board_id FROM boards WHERE address = %s",
+                (address,))
+    res = cur.fetchone()
+    if not bool(res):
+        raise HTTPException(status_code=400, detail="Board does not exist")
+    board_id = res[0]
 
+    cur.execute("""
+    SELECT users.user_id, users.user_name
+    FROM links 
+    JOIN users ON users.user_id = links.user_id
+    WHERE links.board_id = %s
+    """, (board_id,))
+
+    rows = cur.fetchall()
+
+    return [
+        {"user_id": row[0], "username": row[1]}
+        for row in rows
+    ]
+    
 # Выдать пользователю роль на доске
 @app.post("/links")
 def give_role(link: Link):
