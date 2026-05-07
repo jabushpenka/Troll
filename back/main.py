@@ -538,7 +538,7 @@ class ConnectionManager:
     async def broadcast(self, board_address: str, user_name: str, message: dict):
         for connection in self.active_connections:
             if connection.board_address == board_address and connection.user_name != user_name:
-                await connection.websocket.send_text(message)
+                await connection.websocket.send_json(message)
 
     async def broadcast_connections(self, board_address: str):
         users = [
@@ -566,27 +566,22 @@ async def websocket_endpoint(websocket: WebSocket, board_address, user_name: str
     await manager.connect(websocket, board_address, user_name)
     await manager.broadcast_connections(board_address) 
     time = f"{datetime.now().time().minute}:{datetime.now().time().second:02}"
-    await manager.broadcast(board_address, user_name, f"{time} {user_name} подключился")
+    await manager.broadcast(board_address, user_name, {"type": "user_connected", "message" : f"{time} {user_name} подключился"})
     try:
         while True:
             data = await websocket.receive_json()
             time = f"{datetime.now().time().minute}:{datetime.now().time().second:02}"
-            #это просто для теста работоспособности websocket с фронтом, потом убрать
-            if data["type"] == "button_click":
-                await websocket.send_json({ #тому кто нажал; надо будет выбрать между ws.send_json и manager.send_personal_message
-                    "type": "info",
-                    "message": f"{time} Вы нажали кнопку"
-                })
-                await manager.broadcast(board_address, user_name, { # остальным
-                    "type": "button_click",
-                    "message": f"{time} {user_name} нажал кнопку"
+            if data["type"] == "board_update":
+                await manager.broadcast(board_address,user_name, {
+                    "type": "board_update",
+                    "message": f"{time} {user_name} обновил доску"
                 })
             await manager.send_personal_message(f"{time} Вы сделали: {data}", websocket)
-            await manager.broadcast(board_address, user_name, f"{time} {user_name} сделал: {data}")
+            await manager.broadcast(board_address, user_name, {"type": "user_updated_board", "message": f"{time} {user_name} сделал: {data}"})
     except WebSocketDisconnect:
         board_address = manager.disconnect(websocket)
         if board_address:
             await manager.broadcast_connections(board_address)
 
         time = f"{datetime.now().time().minute}:{datetime.now().time().second:02}"
-        await manager.broadcast(board_address, user_name, f"{time} {user_name} отключился")
+        await manager.broadcast(board_address, user_name, {"type": "user_disconnected", "message": f"{time} {user_name} отключился"})
