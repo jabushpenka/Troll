@@ -1,8 +1,9 @@
 import styles from "../styles/Board.module.css";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useParams } from "react-router-dom"; //для использования данных, полученных при переходе через navigate
 import {nanoid} from "nanoid";
 import { useAuth } from "../AuthContext.jsx";
+import { useConnections } from "../hooks/Websocket.jsx";
 import Templates from "./Templates.jsx";
 import Connections from "./Connections.jsx";
 
@@ -15,26 +16,71 @@ import taskbutton from '../assets/task-button.svg';
 import changeapply from '../assets/change-apply.svg';
 
 export default function Board() {
-  const { user } = useAuth();
-  if (!user) return <div>Not authorized</div>;
-  const username = user.user_name;
+  const [loading, setLoading] = useState(true);
+  
+  const { user, loading: userLoading } = useAuth();
 
+  let username = null;
+  if (!userLoading){
+    username = user.user_name;
+  }
+  
   const [boardData,setBoardData] = useState({columns: []});
   const [boardInfo, setBoardInfo] = useState({board_name: "Название доски", about: "Описание доски"})
 
   const { address } = useParams();
+  const loadBoard = useCallback(async () => {
+    setLoading(true);
 
-  useEffect(() => {
-    fetch(`http://130.49.148.168:8448/board/${address}`)
-      .then(res => res.json())
-      .then(data => {setBoardData(data)}); 
+    const [boardRes, infoRes] = await Promise.all([
+      fetch(`http://130.49.148.168:8448/board/${address}`),
+      fetch(`http://130.49.148.168:8448/board-info/${address}`)
+    ]);
+
+    const [board_data, board_info] = await Promise.all([
+      boardRes.json(),
+      infoRes.json()
+    ]);
+
+    setBoardData(board_data);
+    setBoardInfo(board_info);
+
+    setLoading(false);
   }, [address]);
 
   useEffect(() => {
-    fetch(`http://130.49.148.168:8448/board-info/${address}`)
-      .then(res => res.json())
-      .then(data => {setBoardInfo(data)}); 
-  }, [address]);
+    loadBoard();
+  }, [loadBoard]);
+
+  //ws      
+  const { updateBoard, users, onlineUsers} = useConnections({
+    boardAddress: address,
+    userName: username,
+    onMessage: (data) => { //обработка сообщений вебсокета
+      if (data.type === "board_update") {
+        loadBoard();
+      }
+    },
+    });
+
+  const boardUpdate = async () => {
+    await fetch(`http://130.49.148.168:8448/boards/${address}`,{
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(boardData),
+    });
+    await fetch(`http://130.49.148.168:8448/boards-info/${address}`,{
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(boardInfo),
+    });
+
+    updateBoard();
+  }
 
   const [updateBoardName, setUpdateBoardName] = useState({board_name: boardInfo.board_name, active: false});
 
@@ -46,6 +92,7 @@ export default function Board() {
 
   const [activeTask, setActiveTask] = useState({colId: null, cardId: null, title: ""})
   const [updateActiveTask, setUpdateActiveTask] = useState({colId: null, cardId: null, taskId: null, title: ""})
+
 
   //добавление
   const addColumn = () => {
@@ -437,27 +484,16 @@ export default function Board() {
     ))
   }
 
+  if (loading || !user) {
+    return <div>Loading... </div>
+  }
+
   return (
     
     <div className={styles.board}>
       <div className={styles.boardname}>
         {boardName()}
-        <button className={styles.addcolumn} onClick={async () => {
-          await fetch(`http://130.49.148.168:8448/boards/${address}`,{
-            method: "PUT",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify(boardData),
-          });
-          await fetch(`http://130.49.148.168:8448/boards-info/${address}`,{
-            method: "PUT",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify(boardInfo),
-          });
-          }}>Сохранить</button>
+        <button className={styles.addcolumn} onClick={async () => boardUpdate()}>Сохранить</button>
       </div>
 
       <div className={styles.columns}>
@@ -488,7 +524,7 @@ export default function Board() {
 
       <Templates />
 
-      <Connections userName={username} boardAddress={address}/>
+      <Connections users={users} onlineUsers={onlineUsers}/>
     </div>
   );
 }
