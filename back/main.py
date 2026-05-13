@@ -305,7 +305,7 @@ def get_board_links(address: str):
     board_id = res[0]
 
     cur.execute("""
-    SELECT users.user_id, users.user_name
+    SELECT users.user_id, users.user_name, links.role_id
     FROM links 
     JOIN users ON users.user_id = links.user_id
     WHERE links.board_id = %s
@@ -314,7 +314,7 @@ def get_board_links(address: str):
     rows = cur.fetchall()
 
     return [
-        {"user_id": row[0], "username": row[1]}
+        {"user_id": row[0], "username": row[1], "role_id": row[2]}
         for row in rows
     ]
     
@@ -399,7 +399,7 @@ def check_access(address: str, user_name: str = Depends(get_current_user)):
         raise HTTPException(status_code=403, detail="Unknown role - no access")
     role_name = res[0]
 
-    result = {"Access level": role_name}
+    result = {"Access_level": role_name}
     return result
 
 

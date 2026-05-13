@@ -28,6 +28,30 @@ function Home() {
 
     const [activeAddUser, setActiveAddUser] = useState(false);
     const [addUsernameValue, setAddUsernameValue] = useState("");
+    const [selectedRole, setSelectedRole] = useState("Worker");
+    const [users, setUsers] = useState([])
+
+    //1 - Owner 2 - Administrator 3 - Manager 4 - Worker
+    const roleNamesRu = {
+      1: "Владелец",
+      2: "Администратор",
+      3: "Менеджер",
+      4: "Сотрудник",
+    }
+
+    const roleClassMap = {
+      1: "owner",
+      2: "admin",
+      3: "manager",
+      4: "worker",
+    }
+
+    useEffect(() => {
+      fetch(`http://130.49.148.168:8448/links/${address}`)
+        .then((res) => res.json())
+        .then((data) => setUsers(data))
+        .catch((err) => console.error(err))
+    }, [address])
 
     useEffect(() => {
       if (isOpen) {
@@ -67,35 +91,81 @@ function Home() {
       }
     };
 
-    const addUser = async () => {
+    const addUser = async (username,role_name) => {
       if (!addUsernameValue.trim()) return;
       const res = await fetch(`http://130.49.148.168:8448/links`, {
         method: 'POST',
         credentials: "include",
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({user_name: addUsernameValue, address: address, role_name: 'Administrator'})
+        body: JSON.stringify({user_name: username, address: address, role_name: role_name})
       });
 
       const data = await res.json();
 
-      console.log(data);
+
       setAddUsernameValue("");
     }
 
     const addUserBlock = () => {
       return (
-          <div className="addUserBlock">
-            <input
-              autoFocus
-              value={addUsernameValue}
-              onChange={(e) => setAddUsernameValue(e.target.value)}
-              placeholder="Юзернейм"
-            />
-            <button onClick={() => addUser()}>Добавить пользователя</button>
-          </div>
-        )
+        <div className={styles.addUserBlock}>
+          <input
+            autoFocus
+            value={addUsernameValue}
+            onChange={(e) => setAddUsernameValue(e.target.value)}
+            placeholder="Юзернейм"
+            className={styles.input}
+          />
+
+          <select
+            value={selectedRole}
+            onChange={(e) => setSelectedRole(e.target.value)}
+            className={styles.select}
+          >
+            <option value="Administrator">Администратор</option>
+            <option value="Manager">Менеджер</option>
+            <option value="Worker">Сотрудник</option>
+          </select>
+
+          <button
+            className={styles.button}
+            onClick={() => addUser(addUsernameValue, selectedRole)}
+          >
+            Добавить
+          </button>
+
+        </div>
+      )
     }
 
+    const usersBlock = () => {
+      return (
+        <div className={styles.usersBlock}>
+          <div className={styles.usersTitle}>Пользователи доски</div>
+
+          {users.length === 0 ? (
+            <div className={styles.emptyUsers}>Нет пользователей</div>
+          ) : (
+            users.map((user) => (
+              <div key={user.user_id} className={styles.userRow}>
+                <span className={styles.username}>
+                  {user.username}
+                </span>
+
+                <span
+                  className={`${styles.role} ${
+                    styles[roleClassMap[user.role_id]]
+                  }`}
+                >
+                  {roleNamesRu[user.role_id] ?? user.role_id}
+                </span>
+              </div>
+            ))
+          )}
+        </div>
+      )
+    }
+    
     return (
       <div className={styles.overlayEditBoard} onClick={onClose} onKeyDown={(e) => keyPress(e)}>
         <div
@@ -119,10 +189,12 @@ function Home() {
             maxLength={200}
           />
 
-          {addUserBlock()}
+          {isEdit && addUserBlock()}
 
-          <button onClick={saveBoardChanges}>
-            Сохранить изменения
+          {isEdit && usersBlock()}
+
+          <button onClick={saveBoardChanges} className={styles.saveBoardChanges}>
+            {isEdit ? "Сохранить изменения" : "Создать доску"}
           </button>
         </div>
       </div>

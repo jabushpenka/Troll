@@ -15,9 +15,16 @@ export async function createBoard(address, username, boardName = 'New Board', ab
     return data.json(); //{"board_id": board_id, "owner_id": owner_id, "address": address}
 }
 
-export async function checkBoardAccess(address,username){
-    const boardAccessUrl = `http://130.49.148.168:8448/boards/${address}/${username}`;
+export async function checkBoardAccess(address){
+    const boardAccessUrl = `http://130.49.148.168:8448/boards/${address}`;
+    const token = localStorage.getItem("token");
+    const data = await fetch(boardAccessUrl, {
+        method: 'GET',
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`
+        }
+    })
 
-    
-
+    return data.json(); //{"Access_level": role}
 }

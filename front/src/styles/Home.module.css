@@ -33,24 +33,28 @@
   background-color: #FBF6EF;
   padding: 20px;
   border-radius: 12px;
-  width: 400px;
+  min-width: 400px;
   display: flex;
   flex-direction: column;
   gap: 12px;
   box-shadow: 0 10px 30px rgba(0,0,0,0.3);
 }
 
+.editBoard > h2 {
+  text-align: center;
+}
+
 .editBoard > input {
   padding: 10px;
   font-size: 14px;
-  border-radius: 6px;
+  border-radius: 4px;
   border: 1px solid #ccc;
 }
 
 .editBoard > textarea {
   padding: 10px;
   font-size: 14px;
-  border-radius: 6px;
+  border-radius: 4px;
   border: 1px solid #ccc;
   min-height: 100px;
   resize: none;
@@ -58,7 +62,116 @@
 
 .editBoard > button {
   padding: 10px;
-  border-radius: 6px;
+  border-radius: 4px;
   border: none;
   cursor: pointer;
+}
+
+.addUserBlock {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+}
+
+.input,
+.select {
+  height: 42px;
+  padding: 0 14px;
+  border: 1px solid #dcdcdc;
+  border-radius: 4px;
+  outline: none;
+  font-size: 14px;
+  background: #f9f9f9;
+}
+
+.input:focus,
+.select:focus {
+  border-color: #4f7cff;
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(79, 124, 255, 0.15);
+}
+
+.button {
+  height: 42px;
+  padding: 0 18px;
+  border: none;
+  border-radius: 4px;
+  background-color: #4f7cff;
+  color: #FFFFFF;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.saveBoardChanges {
+  margin-top: 20px;
+  background-color: #ffffff;
+  font-size: 20px;
+  outline: 1px solid #404040;
+}
+
+.usersBlock {
+  margin-top: 20px;
+  padding: 18px;
+  background: #fff;
+  border-radius: 8px;
+  width: 100%;
+  max-width: 420px;
+}
+
+.usersTitle {
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 16px;
+  color: #222;
+}
+
+.userRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  padding: 12px 14px;
+  border-radius: 6px;
+  background: #f7f8fc;
+
+  margin-bottom: 10px;
+}
+
+.username {
+  font-weight: 600;
+  color: #222;
+}
+
+.role {
+  font-size: 13px;
+  padding: 5px 10px;
+  border-radius: 4px;
+  background: #dfe7ff;
+  color: #3d5afe;
+  font-weight: 600;
+}
+.owner {
+  background: #1e1e1e;
+  color: #FFFFFF;
+}
+.admin {
+  background: #c29b5f;
+  color: #ffffff;
+}
+.manager {
+  background: #597f9b;
+  color: #ffffff;
+}
+.worker {
+  background: #f1f1f1;
+  color: #555;
+}
+
+.emptyUsers {
+  color: #888;
+  font-size: 14px;
+  text-align: center;
+  padding: 12px 0;
 }

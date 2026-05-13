@@ -1,9 +1,10 @@
 import styles from "../styles/Board.module.css";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useParams } from "react-router-dom"; //для использования данных, полученных при переходе через navigate
 import {nanoid} from "nanoid";
 import { useAuth } from "../AuthContext.jsx";
 import { useConnections } from "../hooks/Websocket.jsx";
+import { checkBoardAccess } from "../api.jsx";
 import Templates from "./Templates.jsx";
 import Connections from "./Connections.jsx";
 
@@ -16,6 +17,9 @@ import taskbutton from '../assets/task-button.svg';
 import changeapply from '../assets/change-apply.svg';
 
 export default function Board() {
+  const roles = ["Owner","Administrator","Manager","Worker"];
+  const role = useRef("Worker");
+
   const [loading, setLoading] = useState(true);
   
   const { user, loading: userLoading } = useAuth();
@@ -23,18 +27,19 @@ export default function Board() {
   let username = null;
   if (!userLoading){
     username = user.user_name;
-  }
+  };
   
   const [boardData,setBoardData] = useState({columns: []});
-  const [boardInfo, setBoardInfo] = useState({board_name: "Название доски", about: "Описание доски"})
+  const [boardInfo, setBoardInfo] = useState({board_name: "Название доски", about: "Описание доски"});
 
   const { address } = useParams();
   const loadBoard = useCallback(async () => {
     setLoading(true);
 
-    const [boardRes, infoRes] = await Promise.all([
+    const [boardRes, infoRes, role_check_res] = await Promise.all([
       fetch(`http://130.49.148.168:8448/board/${address}`),
-      fetch(`http://130.49.148.168:8448/board-info/${address}`)
+      fetch(`http://130.49.148.168:8448/board-info/${address}`),
+      checkBoardAccess(address)
     ]);
 
     const [board_data, board_info] = await Promise.all([
@@ -44,6 +49,8 @@ export default function Board() {
 
     setBoardData(board_data);
     setBoardInfo(board_info);
+
+    role.current = role_check_res.Access_level;
 
     setLoading(false);
   }, [address]);
@@ -59,9 +66,10 @@ export default function Board() {
     onMessage: (data) => { //обработка сообщений вебсокета
       if (data.type === "board_update") {
         loadBoard();
-      }
-    },
-    });
+        }
+      },
+    }
+  );
 
   const boardUpdate = async () => {
     await fetch(`http://130.49.148.168:8448/boards/${address}`,{
@@ -80,18 +88,18 @@ export default function Board() {
     });
 
     updateBoard();
-  }
+  };
 
   const [updateBoardName, setUpdateBoardName] = useState({board_name: boardInfo.board_name, active: false});
 
   const [newColumnName, setNewColumnName] = useState("Новая колонка");
   const [updateActiveColumn, setUpdateActiveColumn] = useState({colId: null, title: ""});
 
-  const [activeCard, setActiveCard] = useState({colId: null, title: ""})
+  const [activeCard, setActiveCard] = useState({colId: null, title: ""});
   const [updateActiveCard, setUpdateActiveCard] = useState({colId: null, cardId: null, title: ""});
 
-  const [activeTask, setActiveTask] = useState({colId: null, cardId: null, title: ""})
-  const [updateActiveTask, setUpdateActiveTask] = useState({colId: null, cardId: null, taskId: null, title: ""})
+  const [activeTask, setActiveTask] = useState({colId: null, cardId: null, title: ""});
+  const [updateActiveTask, setUpdateActiveTask] = useState({colId: null, cardId: null, taskId: null, title: ""});
 
 
   //добавление
@@ -170,7 +178,7 @@ export default function Board() {
     setUpdateBoardName(prev => ({...prev, active: false}));
     setBoardInfo(prev => ({...prev,board_name: title}));
     }
-  }
+  };
 
   const updateColumnTitle = () => {
     const colId = updateActiveColumn.colId;
@@ -278,7 +286,7 @@ export default function Board() {
     if (e.key === 'Escape'){
       setUpdateBoardName({board_name: boardInfo.board_name, active: false});
     }
-  }
+  };
 
   const updateColumnKeyPress = (e) => {
     if (e.key === 'Enter' || e.key === 'Escape'){
@@ -307,7 +315,7 @@ export default function Board() {
   
   const boardName = () => {
     return (
-      (updateBoardName.active == true)
+      (updateBoardName.active == true) && (roles.slice(0,1).includes(role.current))
         ? (
           <div className={styles.updateBoardName}>
             <input 
@@ -335,11 +343,11 @@ export default function Board() {
         )
         : <h1 onClick={() => {setUpdateBoardName({board_name: boardInfo.board_name, active: true})}}>{boardInfo.board_name}</h1>
     )
-  }
+  };
 
   const columnTitle = (col) => {
     return (
-      (updateActiveColumn.colId == col.id) 
+      ((updateActiveColumn.colId == col.id) && (roles.slice(0,2).includes(role.current))) 
         ? (
           <div className={styles.updateColumnName}>
             <input
@@ -367,11 +375,11 @@ export default function Board() {
           )
         : <h2 onClick={() => {setUpdateActiveColumn({colId: col.id, title: col.title})}}>{col.title}</h2>
       )
-  }
+  };
 
   const cardTitle = (col, card) => {
     return (
-      (updateActiveCard.colId == col.id) && (updateActiveCard.cardId == card.id) 
+      (updateActiveCard.colId == col.id) && (updateActiveCard.cardId == card.id) && (roles.slice(0,3).includes(role.current))
         ? (
           <div className={styles.updateCardName}>
             <input
@@ -399,11 +407,11 @@ export default function Board() {
         )
         : <h2 onClick={() => {setUpdateActiveCard({colId: col.id, cardId: card.id, title: card.title})}}>{card.title}</h2>
       )
-  }
+  };
 
   const cardAddButton = (col) => {
     return (
-      (activeCard.colId === col.id)
+      (activeCard.colId === col.id) && (roles.slice(0,3).includes(role.current))
         ? (
             <div className={styles.addCardContainer}>
               <input
@@ -433,7 +441,7 @@ export default function Board() {
             </button>
           )
       )
-  }
+  };
     
   const taskList = (col, card) => {
     return (
@@ -453,7 +461,7 @@ export default function Board() {
         ))}
       </ul>
     )
-  }
+  };
  
   const taskAddButton = (colId, cardId) => {
     return (
@@ -482,11 +490,11 @@ export default function Board() {
         <img src={add}/> добавить задание
       </button>
     ))
-  }
+  };
 
   if (loading || !user) {
     return <div>Loading... </div>
-  }
+  };
 
   return (
     
@@ -513,7 +521,7 @@ export default function Board() {
                 {taskList(col,card)}
               </div>
             ))}
-            {cardAddButton(col)}
+            {(roles.slice(0,3).includes(role)) && cardAddButton(col)}
           </div>
         ))}
        <button 
@@ -522,7 +530,7 @@ export default function Board() {
           добавить колонку</button>
       </div>
 
-      <Templates />
+      {/* <Templates /> */}
 
       <Connections users={users} onlineUsers={onlineUsers}/>
     </div>
